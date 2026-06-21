@@ -33,6 +33,13 @@ class SimulatorTests(unittest.TestCase):
         self.assertIn("rnd_llegada_1", grouped["EVENTOS"])
         self.assertIn("estado_caja", grouped["OBJETOS_PERMANENTES"])
 
+    def test_simulation_keeps_only_last_ten_rows_for_recent_view(self):
+        params = SimulationParams(x_minutes=80.0, max_iterations=1000, display_from=1, display_count=2, seed=45)
+        result = simulate(params)
+        self.assertLessEqual(len(result.last_rows), 10)
+        self.assertEqual(result.last_rows[-1].evento, result.final_row.evento)
+        self.assertEqual(result.last_rows[-1].reloj_min, result.final_row.reloj_min)
+
 
 if __name__ == "__main__":
     unittest.main()

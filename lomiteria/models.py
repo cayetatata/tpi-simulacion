@@ -145,6 +145,7 @@ class StateRow:
 @dataclass
 class SimulationResult:
     rows: list[StateRow]
+    last_rows: list[StateRow]
     final_row: StateRow
     metrics: dict[str, float]
     controls_15: list[dict[str, Any]]

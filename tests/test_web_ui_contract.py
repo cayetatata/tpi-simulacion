@@ -20,6 +20,14 @@ class WebUiContractTests(unittest.TestCase):
         self.assertIn('data-vector-filter="OBJETOS_PERMANENTES"', html)
         self.assertIn('data-vector-filter="EVENTOS"', html)
 
+    def test_vector_and_results_expose_recent_rows_and_stat_cards(self):
+        html = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
+        js = (ROOT / "web" / "app.js").read_text(encoding="utf-8")
+        self.assertIn('data-row-scope="last"', html)
+        self.assertIn("statisticsGrid", html)
+        self.assertIn("renderStatisticCards", js)
+        self.assertIn("last_rows", js)
+
 
 if __name__ == "__main__":
     unittest.main()
