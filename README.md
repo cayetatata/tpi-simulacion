@@ -8,30 +8,30 @@ Aplicativo en Python para simular por eventos discretos el sistema de la lomiter
 python -m unittest discover -s tests -v
 ```
 
-## Ejecutar la aplicacion
+## Ejecutar la aplicacion web
 
 ```powershell
 python main.py
 ```
 
-La aplicacion abre una interfaz Tkinter con pestanas:
+El comando levanta un servidor local y abre la interfaz web en el navegador:
 
-- Parametros
-- Vector
-- Ultima fila
-- Metricas
-- Control 15 min
-- Control 30 min
-- Tablas
-- Runge-Kutta
+- Modelo
+- Configuracion
+- Resultados
+- Vector estado
+- Controles
+- Tablas y RK4
+- Exportacion
 
 ## Uso
 
-1. Configurar parametros en la pestana `Parametros`.
+1. Revisar el planteo en la pestana `Modelo`.
+2. Configurar parametros en la pestana `Configuracion`.
 2. Indicar `Tiempo X`, `Max iteraciones`, `Mostrar desde j` y `Cantidad i`.
 3. Presionar `Simular`.
 4. Revisar vector, metricas, controles, tablas intermedias y Runge-Kutta.
-5. Presionar `Exportar CSV` para guardar los resultados.
+5. Usar `Exportacion` para descargar CSV desde el navegador.
 
 ## Estructura
 
@@ -41,7 +41,9 @@ La aplicacion abre una interfaz Tkinter con pestanas:
 - `lomiteria/rk4.py`: tablas Runge-Kutta.
 - `lomiteria/simulator.py`: motor de eventos discretos.
 - `lomiteria/exporter.py`: exportacion CSV.
-- `lomiteria/ui.py`: interfaz Tkinter.
-- `main.py`: entrada de la aplicacion.
+- `lomiteria/ui.py`: interfaz Tkinter anterior, conservada como respaldo.
+- `lomiteria/web_server.py`: servidor HTTP local y API JSON.
+- `web/`: interfaz web de presentacion.
+- `main.py`: entrada de la aplicacion web.
 
 El motor no guarda todo el vector en memoria. Solo conserva el estado actual, objetos activos, filas pedidas, ultima fila, metricas, controles y tablas auxiliares.

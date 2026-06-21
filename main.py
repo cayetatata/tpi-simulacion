@@ -1,5 +1,5 @@
-from lomiteria.ui import run_app
+from lomiteria.web_server import run_web_app
 
 
 if __name__ == "__main__":
-    run_app()
+    run_web_app()

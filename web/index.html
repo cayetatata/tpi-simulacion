@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Lomiteria | Simulacion TP5</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Navegacion principal">
+        <div class="brand-block">
+          <div class="brand-mark">L5</div>
+          <div>
+            <p class="eyebrow">SIMULACION 4K1</p>
+            <h1>Lomiteria</h1>
+          </div>
+        </div>
+        <nav class="nav-list" id="navList">
+          <button class="nav-item active" data-view="modelo">Modelo</button>
+          <button class="nav-item" data-view="configuracion">Configuracion</button>
+          <button class="nav-item" data-view="resultados">Resultados</button>
+          <button class="nav-item" data-view="vector">Vector estado</button>
+          <button class="nav-item" data-view="controles">Controles</button>
+          <button class="nav-item" data-view="tablas">Tablas y RK4</button>
+          <button class="nav-item" data-view="exportacion">Exportacion</button>
+        </nav>
+        <div class="sidebar-note">
+          <span class="dot"></span>
+          Motor por eventos discretos, reloj en minutos y memoria acotada.
+        </div>
+      </aside>
+
+      <main class="workspace">
+        <section class="hero-panel">
+          <div>
+            <p class="eyebrow">Trabajo Practico 5</p>
+            <h2>Simulador de eventos discretos para defensa academica</h2>
+            <p class="hero-copy">Vector de estado, objetos activos, RND usados, controles temporizados y tablas RK4 en una unica presentacion navegable.</p>
+          </div>
+          <div class="hero-actions">
+            <button id="simulateButton" class="primary-button">Simular</button>
+            <button id="quickDemoButton" class="ghost-button">Cargar demo</button>
+          </div>
+        </section>
+
+        <section class="view active" id="view-modelo">
+          <div class="section-header">
+            <p class="eyebrow">Planteo conceptual</p>
+            <h3>Como se modelo el sistema</h3>
+          </div>
+          <div class="model-grid">
+            <article class="model-card wide">
+              <h4>Flujo de vida del cliente</h4>
+              <div class="flowline">
+                <span>Llegada</span>
+                <span>Caja</span>
+                <span>Mostrador</span>
+                <span>Llevar / Salon</span>
+                <span>Salida</span>
+              </div>
+              <p>El reloj avanza al menor proximo evento. Cada fila se calcula desde la fila anterior y solo se conservan las filas pedidas, la ultima fila y los acumuladores.</p>
+            </article>
+            <article class="model-card">
+              <h4>Eventos</h4>
+              <ul class="compact-list">
+                <li>llegada_cliente</li>
+                <li>fin_atencion_caja</li>
+                <li>fin_preparacion_mostrador_i</li>
+                <li>fin_permanencia_rojo / azul</li>
+                <li>controles 15 y 30 min</li>
+              </ul>
+            </article>
+            <article class="model-card">
+              <h4>Objetos permanentes</h4>
+              <ul class="compact-list">
+                <li>Caja unica</li>
+                <li>3 preparadores</li>
+                <li>Salon rojo, capacidad 30</li>
+                <li>Salon azul, capacidad 40</li>
+              </ul>
+            </article>
+            <article class="model-card">
+              <h4>Objetos temporales</h4>
+              <p>Clientes activos con estados EAC, SAC, EPM, EASR, EASA, PSR y PSA. Los clientes retirados no se muestran.</p>
+            </article>
+            <article class="model-card">
+              <h4>Supuesto clave</h4>
+              <p>Si el salon elegido esta lleno, el cliente espera en la cola de ese mismo salon. No cambia de salon y no se retira.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="view" id="view-configuracion">
+          <div class="section-header split">
+            <div>
+              <p class="eyebrow">Parametros modificables</p>
+              <h3>Configuracion de la simulacion</h3>
+            </div>
+            <button id="resetButton" class="small-button">Restaurar valores</button>
+          </div>
+          <form id="paramsForm" class="params-grid"></form>
+        </section>
+
+        <section class="view" id="view-resultados">
+          <div class="section-header">
+            <p class="eyebrow">Lectura ejecutiva</p>
+            <h3>Resumen de resultados</h3>
+          </div>
+          <div id="statusBanner" class="status-banner">Ejecute una simulacion para ver resultados.</div>
+          <div id="kpiGrid" class="kpi-grid"></div>
+          <div class="panel">
+            <h4>Metricas</h4>
+            <div id="metricsTable" class="table-host"></div>
+          </div>
+        </section>
+
+        <section class="view" id="view-vector">
+          <div class="section-header">
+            <p class="eyebrow">Vector de estado</p>
+            <h3>Filas solicitadas por j e i</h3>
+          </div>
+          <div class="table-tools">
+            <span>Separado por categorias: reloj, eventos, objetos permanentes, variables estadisticas y objetos temporales.</span>
+          </div>
+          <div id="vectorTable" class="table-host large-table"></div>
+          <div class="panel">
+            <h4>Ultima fila en X</h4>
+            <div id="finalTable" class="table-host"></div>
+          </div>
+        </section>
+
+        <section class="view" id="view-controles">
+          <div class="section-header">
+            <p class="eyebrow">Eventos temporizados</p>
+            <h3>Controles cada 15 y 30 minutos</h3>
+          </div>
+          <div class="two-column">
+            <div class="panel">
+              <h4>Cola mostrador cada 15 minutos</h4>
+              <div id="controls15Table" class="table-host"></div>
+            </div>
+            <div class="panel">
+              <h4>Ocupacion salones cada 30 minutos</h4>
+              <div id="controls30Table" class="table-host"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" id="view-tablas">
+          <div class="section-header">
+            <p class="eyebrow">Trazabilidad</p>
+            <h3>Tablas intermedias y Runge-Kutta</h3>
+          </div>
+          <div class="two-column">
+            <div class="panel">
+              <h4>Tablas intermedias RND</h4>
+              <div id="intermediateTable" class="table-host"></div>
+            </div>
+            <div class="panel">
+              <h4>Runge-Kutta</h4>
+              <div id="rkTable" class="table-host"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" id="view-exportacion">
+          <div class="section-header">
+            <p class="eyebrow">Entrega</p>
+            <h3>Exportacion local</h3>
+          </div>
+          <div class="panel export-panel">
+            <p>La exportacion desde la UI genera archivos CSV desde los datos calculados en el navegador. Use estos archivos para anexar evidencia o revisar el vector en planilla.</p>
+            <div class="export-actions">
+              <button id="downloadVector" class="primary-button">Descargar vector</button>
+              <button id="downloadMetrics" class="ghost-button">Descargar metricas</button>
+              <button id="downloadTables" class="ghost-button">Descargar tablas</button>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="/app.js"></script>
+  </body>
+</html>
