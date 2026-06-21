@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Lomiteria | Simulacion TP5</title>
+    <link rel="icon" href="data:,">
     <link rel="stylesheet" href="/styles.css">
   </head>
   <body>
@@ -23,7 +24,6 @@
           <button class="nav-item" data-view="vector">Vector estado</button>
           <button class="nav-item" data-view="controles">Controles</button>
           <button class="nav-item" data-view="tablas">Tablas y RK4</button>
-          <button class="nav-item" data-view="exportacion">Exportacion</button>
         </nav>
         <div class="sidebar-note">
           <span class="dot"></span>
@@ -40,7 +40,6 @@
           </div>
           <div class="hero-actions">
             <button id="simulateButton" class="primary-button">Simular</button>
-            <button id="quickDemoButton" class="ghost-button">Cargar demo</button>
           </div>
         </section>
 
@@ -110,8 +109,8 @@
           <div id="statusBanner" class="status-banner">Ejecute una simulacion para ver resultados.</div>
           <div id="kpiGrid" class="kpi-grid"></div>
           <div class="panel">
-            <h4>Metricas</h4>
-            <div id="metricsTable" class="table-host"></div>
+            <h4>Metricas, variables y puntos del enunciado</h4>
+            <div id="metricsTable" class="metric-definition-grid"></div>
           </div>
         </section>
 
@@ -122,6 +121,14 @@
           </div>
           <div class="table-tools">
             <span>Separado por categorias: reloj, eventos, objetos permanentes, variables estadisticas y objetos temporales.</span>
+          </div>
+          <div class="vector-filter-bar" aria-label="Filtro de vector de estado">
+            <button class="filter-chip active" data-vector-filter="ALL">Todo</button>
+            <button class="filter-chip" data-vector-filter="RELOJ_EVENTO">Reloj / evento</button>
+            <button class="filter-chip" data-vector-filter="EVENTOS">Eventos</button>
+            <button class="filter-chip" data-vector-filter="OBJETOS_PERMANENTES">Objetos permanentes</button>
+            <button class="filter-chip" data-vector-filter="VARIABLES_ESTADISTICAS">Variables estadisticas</button>
+            <button class="filter-chip" data-vector-filter="OBJETOS_TEMPORALES">Objetos temporales</button>
           </div>
           <div id="vectorTable" class="table-host large-table"></div>
           <div class="panel">
@@ -152,30 +159,15 @@
             <p class="eyebrow">Trazabilidad</p>
             <h3>Tablas intermedias y Runge-Kutta</h3>
           </div>
-          <div class="two-column">
-            <div class="panel">
-              <h4>Tablas intermedias RND</h4>
-              <div id="intermediateTable" class="table-host"></div>
-            </div>
-            <div class="panel">
-              <h4>Runge-Kutta</h4>
-              <div id="rkTable" class="table-host"></div>
-            </div>
+          <div class="panel">
+            <h4>Tablas intermedias RND</h4>
+            <p class="panel-intro">Cada tabla muestra los rangos de RND usados para decidir el valor sorteado. El vector de estado conserva el RND aplicado en cada variable aleatoria.</p>
+            <div id="intermediateTable" class="lookup-grid"></div>
           </div>
-        </section>
-
-        <section class="view" id="view-exportacion">
-          <div class="section-header">
-            <p class="eyebrow">Entrega</p>
-            <h3>Exportacion local</h3>
-          </div>
-          <div class="panel export-panel">
-            <p>La exportacion desde la UI genera archivos CSV desde los datos calculados en el navegador. Use estos archivos para anexar evidencia o revisar el vector en planilla.</p>
-            <div class="export-actions">
-              <button id="downloadVector" class="primary-button">Descargar vector</button>
-              <button id="downloadMetrics" class="ghost-button">Descargar metricas</button>
-              <button id="downloadTables" class="ghost-button">Descargar tablas</button>
-            </div>
+          <div class="panel stacked-panel">
+            <h4>Runge-Kutta por valor de A</h4>
+            <p class="panel-intro">Se separa una tabla por cada A uniforme discreto. La lectura principal es el tiempo en minutos en que L supera el limite de preparacion.</p>
+            <div id="rkTable" class="rk-grid"></div>
           </div>
         </section>
       </main>

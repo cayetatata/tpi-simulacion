@@ -24,7 +24,23 @@ class WebServerTests(unittest.TestCase):
         self.assertIn("controls_30", payload)
         self.assertIn("rk4_tables", payload)
         self.assertIn("intermediate_tables", payload)
+        self.assertIn("metric_definitions", payload)
         self.assertEqual(payload["summary"]["final_event"], "fin_simulacion")
+
+    def test_metric_definitions_explain_formula_variables_and_requirement(self):
+        result = simulate(SimulationParams(x_minutes=30.0, display_from=1, display_count=2, seed=8))
+        payload = result_to_payload(result)
+        first = payload["metric_definitions"][0]
+        self.assertIn("formula", first)
+        self.assertIn("variables", first)
+        self.assertIn("enunciado", first)
+        metric_names = set(payload["metrics"])
+        calculated_definitions = [
+            item["metrica"]
+            for item in payload["metric_definitions"]
+            if not item["metrica"].startswith("control_")
+        ]
+        self.assertTrue(set(calculated_definitions).issubset(metric_names))
 
     def test_params_payload_accepts_editable_a_values(self):
         params = params_from_payload({"a_values": "1, 4, 7", "x_minutes": "20"})

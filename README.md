@@ -22,16 +22,14 @@ El comando levanta un servidor local y abre la interfaz web en el navegador:
 - Vector estado
 - Controles
 - Tablas y RK4
-- Exportacion
 
 ## Uso
 
 1. Revisar el planteo en la pestana `Modelo`.
 2. Configurar parametros en la pestana `Configuracion`.
-2. Indicar `Tiempo X`, `Max iteraciones`, `Mostrar desde j` y `Cantidad i`.
-3. Presionar `Simular`.
-4. Revisar vector, metricas, controles, tablas intermedias y Runge-Kutta.
-5. Usar `Exportacion` para descargar CSV desde el navegador.
+3. Indicar `Tiempo X`, `Max iteraciones`, `Mostrar desde j` y `Cantidad i`.
+4. Presionar `Simular`.
+5. Revisar vector filtrable por categorias, metricas explicadas, controles, tablas intermedias y Runge-Kutta.
 
 ## Estructura
 
@@ -40,8 +38,6 @@ El comando levanta un servidor local y abre la interfaz web en el navegador:
 - `lomiteria/randoms.py`: formulas aleatorias.
 - `lomiteria/rk4.py`: tablas Runge-Kutta.
 - `lomiteria/simulator.py`: motor de eventos discretos.
-- `lomiteria/exporter.py`: exportacion CSV.
-- `lomiteria/ui.py`: interfaz Tkinter anterior, conservada como respaldo.
 - `lomiteria/web_server.py`: servidor HTTP local y API JSON.
 - `web/`: interfaz web de presentacion.
 - `main.py`: entrada de la aplicacion web.

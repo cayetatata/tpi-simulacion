@@ -111,19 +111,14 @@ const groups = [
 ];
 
 let latestPayload = null;
+let activeVectorFilter = "ALL";
 
 document.addEventListener("DOMContentLoaded", () => {
   buildForm();
   bindNavigation();
+  bindVectorFilters();
   document.getElementById("simulateButton").addEventListener("click", runSimulation);
-  document.getElementById("quickDemoButton").addEventListener("click", () => {
-    setParamValues({ seed: 2026, display_from: 20, display_count: 25 });
-    runSimulation();
-  });
   document.getElementById("resetButton").addEventListener("click", () => setParamValues(defaultParams));
-  document.getElementById("downloadVector").addEventListener("click", () => downloadCsv("vector_estado.csv", latestPayload?.vector_flat || []));
-  document.getElementById("downloadMetrics").addEventListener("click", () => downloadCsv("metricas.csv", metricRows()));
-  document.getElementById("downloadTables").addEventListener("click", () => downloadCsv("tablas_y_rk4.csv", [...intermediateRows(), ...rkRows()]));
 });
 
 function buildForm() {
@@ -156,6 +151,17 @@ function bindNavigation() {
       document.querySelectorAll(".view").forEach((view) => view.classList.remove("active"));
       button.classList.add("active");
       document.getElementById(`view-${button.dataset.view}`).classList.add("active");
+    });
+  });
+}
+
+function bindVectorFilters() {
+  document.querySelectorAll("[data-vector-filter]").forEach((button) => {
+    button.addEventListener("click", () => {
+      activeVectorFilter = button.dataset.vectorFilter;
+      document.querySelectorAll("[data-vector-filter]").forEach((item) => item.classList.remove("active"));
+      button.classList.add("active");
+      if (latestPayload) renderVectorTable(latestPayload.vector_rows || []);
     });
   });
 }
@@ -206,13 +212,13 @@ function activateView(name) {
 
 function renderPayload(payload) {
   renderKpis(payload);
-  renderTable("metricsTable", metricRows());
+  renderMetrics(payload);
   renderVectorTable(payload.vector_rows || []);
   renderTable("finalTable", [payload.final_flat || {}]);
   renderTable("controls15Table", payload.controls_15 || []);
   renderTable("controls30Table", payload.controls_30 || []);
-  renderTable("intermediateTable", intermediateRows());
-  renderTable("rkTable", rkRows());
+  renderLookupTables(payload.intermediate_tables || {});
+  renderRkTables(payload.rk4_tables || {});
 }
 
 function renderKpis(payload) {
@@ -250,9 +256,14 @@ function renderVectorTable(rows) {
   ];
   const columns = [];
   categories.forEach(([key, title, className]) => {
+    if (activeVectorFilter !== "ALL" && activeVectorFilter !== key) return;
     const names = unique(rows.flatMap((row) => Object.keys(row[key] || {})));
     names.forEach((name) => columns.push({ key, name, title, className }));
   });
+  if (!columns.length) {
+    host.innerHTML = emptyMessage("La categoria seleccionada no tiene columnas para las filas mostradas.");
+    return;
+  }
   host.innerHTML = `
     <table>
       <thead>
@@ -265,14 +276,122 @@ function renderVectorTable(rows) {
   `;
 }
 
+function renderMetrics(payload) {
+  const host = document.getElementById("metricsTable");
+  const metrics = payload.metrics || {};
+  const definitions = payload.metric_definitions || [];
+  if (!definitions.length) {
+    host.innerHTML = emptyMessage("No hay definiciones de metricas.");
+    return;
+  }
+  host.innerHTML = definitions.map((definition) => {
+    const value = metrics[definition.metrica];
+    return `
+      <article class="metric-card">
+        <div class="metric-card-top">
+          <div>
+            <p class="metric-key">${definition.metrica}</p>
+            <h5>${definition.titulo}</h5>
+          </div>
+          <strong class="metric-value">${formatMetricValue(value)}</strong>
+        </div>
+        <div class="metric-meta">
+          <span>Formula</span>
+          <code>${definition.formula}</code>
+        </div>
+        <div class="metric-meta">
+          <span>Variables</span>
+          <code>${(definition.variables || []).join(", ")}</code>
+        </div>
+        <p class="metric-enunciado">${definition.enunciado}</p>
+      </article>
+    `;
+  }).join("");
+}
+
+function renderLookupTables(tables) {
+  const host = document.getElementById("intermediateTable");
+  const entries = Object.entries(tables);
+  if (!entries.length) {
+    host.innerHTML = emptyMessage("No hay tablas intermedias para mostrar.");
+    return;
+  }
+  host.innerHTML = entries.map(([name, rows]) => `
+    <article class="lookup-card">
+      <div class="lookup-title">
+        <h5>${lookupTitle(name)}</h5>
+        <span>${rows.length} rangos</span>
+      </div>
+      <div class="range-list">
+        ${rows.map((row) => renderLookupRow(row)).join("")}
+      </div>
+    </article>
+  `).join("");
+}
+
+function renderLookupRow(row) {
+  if ("horario" in row && "rojo" in row) {
+    return `
+      <div class="range-row permanence-row">
+        <span class="range-pill">${row.horario}</span>
+        <div><strong>Reloj ${row.reloj} min</strong><small>Desde las ${row.horario}</small></div>
+        <div><strong>Salon rojo</strong><small>${row.rojo} min</small></div>
+        <div><strong>Salon azul</strong><small>${row.azul} min</small></div>
+      </div>
+    `;
+  }
+  const desde = row.rnd_desde ?? row.desde ?? 0;
+  const hasta = row.rnd_hasta ?? row.hasta ?? 1;
+  const valueKey = Object.keys(row).find((key) => !["rnd_desde", "rnd_hasta", "desde", "hasta"].includes(key));
+  return `
+    <div class="range-row">
+      <span class="range-pill">${formatRange(desde)} <= RND < ${formatRange(hasta)}</span>
+      <strong>${valueKey}: ${formatCell(row[valueKey])}</strong>
+    </div>
+  `;
+}
+
+function renderRkTables(tables) {
+  const host = document.getElementById("rkTable");
+  const entries = Object.entries(tables);
+  if (!entries.length) {
+    host.innerHTML = emptyMessage("No hay tablas Runge-Kutta calculadas.");
+    return;
+  }
+  host.innerHTML = entries.map(([aValue, rows]) => {
+    const last = rows[rows.length - 1] || {};
+    return `
+      <article class="rk-card">
+        <div class="rk-card-head">
+          <div>
+            <p class="metric-key">dL/dt = 3A + 6</p>
+            <h5>A = ${aValue}</h5>
+          </div>
+          <div class="rk-summary">
+            <span>Listo</span>
+            <strong>${metricNumber(last.tiempo_min)} min</strong>
+          </div>
+        </div>
+        <div class="table-host mini-table">
+          ${tableHtml(sampleRkRows(rows))}
+        </div>
+      </article>
+    `;
+  }).join("");
+}
+
 function renderTable(id, rows) {
   const host = document.getElementById(id);
   if (!rows || !rows.length) {
     host.innerHTML = emptyTable();
     return;
   }
+  host.innerHTML = tableHtml(rows);
+}
+
+function tableHtml(rows) {
   const columns = unique(rows.flatMap((row) => Object.keys(row)));
-  host.innerHTML = `
+  return `
     <table>
       <thead><tr>${columns.map((column) => `<th>${column}</th>`).join("")}</tr></thead>
       <tbody>${rows.map((row) => `<tr>${columns.map((column) => `<td>${formatCell(row[column])}</td>`).join("")}</tr>`).join("")}</tbody>
@@ -303,27 +422,6 @@ function rkRows() {
   return rows;
 }
 
-function downloadCsv(filename, rows) {
-  if (!rows.length) return;
-  const columns = unique(rows.flatMap((row) => Object.keys(row)));
-  const csv = [
-    columns.join(","),
-    ...rows.map((row) => columns.map((column) => csvCell(row[column])).join(","))
-  ].join("\n");
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  link.click();
-  URL.revokeObjectURL(url);
-}
-
-function csvCell(value) {
-  const text = String(value ?? "");
-  return `"${text.replaceAll('"', '""')}"`;
-}
-
 function unique(values) {
   return [...new Set(values)];
 }
@@ -339,6 +437,37 @@ function formatCell(value) {
   return value ?? "";
 }
 
+function formatMetricValue(value) {
+  return value === undefined ? "control" : metricNumber(value);
+}
+
+function formatRange(value) {
+  return Number(value).toFixed(2);
+}
+
+function lookupTitle(name) {
+  const titles = {
+    tipo_consumo: "Tipo de consumo",
+    salon: "Salon elegido",
+    a_preparacion: "Valor A para Runge-Kutta",
+    permanencia: "Permanencia por horario"
+  };
+  return titles[name] || name;
+}
+
+function sampleRkRows(rows) {
+  if (rows.length <= 12) return rows;
+  return [
+    ...rows.slice(0, 6),
+    { i: "...", t: "...", l: "...", k1: "...", k2: "...", k3: "...", k4: "...", tiempo_min: "..." },
+    ...rows.slice(-5)
+  ];
+}
+
 function emptyTable() {
   return `<table><tbody><tr><td>Sin datos. Ejecute una simulacion.</td></tr></tbody></table>`;
+}
+
+function emptyMessage(message) {
+  return `<div class="empty-state">${message}</div>`;
 }

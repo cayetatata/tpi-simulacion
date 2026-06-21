@@ -490,6 +490,8 @@ def _metrics(state: SimulationState) -> dict[str, float]:
         "tiempo_promedio_cola_mostrador": _safe_div(state.stats.ac_tiempo_cola_mostrador, state.stats.ct_clientes_pasan_por_mostrador),
         "porcentaje_ocupacion_caja": state.caja.ac_tiempo_ocupada / final_clock * 100.0,
         "porcentaje_ocupacion_preparadores": prep_total / (len(state.preparadores) * final_clock) * 100.0,
+        "max_cola_caja": float(state.stats.max_cola_caja),
+        "max_cola_mostrador": float(state.stats.max_cola_mostrador),
         "clientes_esperaron_salon_rojo_lleno": float(state.stats.ct_esperaron_rojo_lleno),
         "clientes_esperaron_salon_azul_lleno": float(state.stats.ct_esperaron_azul_lleno),
         "clientes_esperaron_salon_lleno_total": float(local_waits),

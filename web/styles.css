@@ -89,7 +89,8 @@ button {
 h1,
 h2,
 h3,
-h4 {
+h4,
+h5 {
   margin: 0;
   font-family: var(--display);
   letter-spacing: 0;
@@ -112,6 +113,10 @@ h3 {
 h4 {
   margin-bottom: 12px;
   font-size: 18px;
+}
+
+h5 {
+  font-size: 17px;
 }
 
 .nav-list {
@@ -183,8 +188,7 @@ h4 {
   line-height: 1.55;
 }
 
-.hero-actions,
-.export-actions {
+.hero-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
@@ -280,6 +284,10 @@ h4 {
   margin: 0;
   color: var(--muted);
   line-height: 1.55;
+}
+
+.panel-intro {
+  margin-bottom: 14px !important;
 }
 
 .compact-list {
@@ -397,6 +405,29 @@ h4 {
   font-size: 14px;
 }
 
+.vector-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.filter-chip {
+  min-height: 36px;
+  padding: 8px 12px;
+  color: var(--ink);
+  background: #fffaf0;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+}
+
+.filter-chip:hover,
+.filter-chip.active {
+  color: #fffdf8;
+  background: var(--ink);
+  border-color: var(--ink);
+}
+
 .table-host {
   overflow: auto;
   max-height: 560px;
@@ -460,8 +491,172 @@ tr:nth-child(even) td {
   background: var(--red);
 }
 
-.export-panel {
-  max-width: 760px;
+.metric-definition-grid,
+.lookup-grid,
+.rk-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.metric-definition-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.metric-card,
+.lookup-card,
+.rk-card {
+  padding: 16px;
+  background: #fffaf0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.metric-card-top,
+.lookup-title,
+.rk-card-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.metric-key {
+  margin: 0 0 5px;
+  color: var(--muted);
+  font: 700 11px var(--mono);
+  text-transform: uppercase;
+}
+
+.metric-value {
+  min-width: 86px;
+  padding: 8px 10px;
+  text-align: center;
+  color: #fffdf8;
+  background: var(--green);
+  border-radius: 6px;
+  font: 700 18px var(--display);
+  font-variant-numeric: tabular-nums;
+}
+
+.metric-meta {
+  display: grid;
+  grid-template-columns: 86px minmax(0, 1fr);
+  gap: 10px;
+  align-items: baseline;
+  margin-top: 12px;
+}
+
+.metric-meta span {
+  color: var(--muted);
+  font: 700 11px var(--mono);
+  text-transform: uppercase;
+}
+
+.metric-meta code {
+  padding: 7px 8px;
+  overflow-wrap: anywhere;
+  color: #2b251c;
+  background: #f1e2c4;
+  border: 1px solid #dcc796;
+  border-radius: 5px;
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+.metric-enunciado {
+  margin-top: 12px !important;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.stacked-panel {
+  margin-top: 14px;
+}
+
+.lookup-grid,
+.rk-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.lookup-title span {
+  padding: 5px 8px;
+  color: #fffdf8;
+  background: var(--blue);
+  border-radius: 999px;
+  font: 700 11px var(--mono);
+}
+
+.range-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.range-row {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  padding: 10px;
+  background: rgba(255, 253, 248, 0.82);
+  border: 1px solid #eadcc5;
+  border-radius: 6px;
+}
+
+.range-pill {
+  padding: 6px 8px;
+  color: #fffdf8;
+  background: #242019;
+  border-radius: 5px;
+  font: 700 12px var(--mono);
+  text-align: center;
+}
+
+.permanence-row {
+  grid-template-columns: 112px minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.permanence-row div {
+  display: grid;
+  gap: 3px;
+}
+
+.permanence-row small {
+  color: var(--muted);
+  font-family: var(--mono);
+}
+
+.rk-summary {
+  min-width: 110px;
+  padding: 9px 10px;
+  text-align: center;
+  color: #fffdf8;
+  background: var(--red);
+  border-radius: 6px;
+}
+
+.rk-summary span {
+  display: block;
+  margin-bottom: 3px;
+  font: 700 10px var(--mono);
+  text-transform: uppercase;
+}
+
+.rk-summary strong {
+  font: 700 19px var(--display);
+}
+
+.mini-table {
+  max-height: 360px;
+  margin-top: 12px;
+}
+
+.empty-state {
+  padding: 18px;
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius);
 }
 
 @media (max-width: 980px) {
@@ -482,7 +677,10 @@ tr:nth-child(even) td {
   .two-column,
   .params-grid,
   .model-grid,
-  .kpi-grid {
+  .kpi-grid,
+  .metric-definition-grid,
+  .lookup-grid,
+  .rk-grid {
     grid-template-columns: 1fr;
   }
 
@@ -493,5 +691,11 @@ tr:nth-child(even) td {
 
   .model-card.wide {
     grid-column: span 1;
+  }
+
+  .range-row,
+  .permanence-row,
+  .metric-meta {
+    grid-template-columns: 1fr;
   }
 }
