@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 
-OBJECT_DEFINITIONS = [
+DEFINICIONES_OBJETOS = [
     {
         "tipo": "Objeto permanente",
         "nombre": "Caja",
@@ -54,7 +54,7 @@ OBJECT_DEFINITIONS = [
 ]
 
 
-STATE_DEFINITIONS = [
+DEFINICIONES_ESTADOS_CLIENTE = [
     {"estado": "EAC", "descripcion": "Espera atencion en caja."},
     {"estado": "SAC", "descripcion": "Siendo atendido en caja."},
     {"estado": "EPM", "descripcion": "Espera preparacion en mostrador."},
@@ -65,7 +65,7 @@ STATE_DEFINITIONS = [
 ]
 
 
-STATISTIC_VARIABLE_DEFINITIONS = [
+DEFINICIONES_VARIABLES_ESTADISTICAS = [
     {"variable": "ac_tiempo_permanencia_negocio", "descripcion": "Acumulador de tiempo total en el negocio de clientes finalizados."},
     {"variable": "ct_clientes_finalizados", "descripcion": "Cantidad de clientes que salieron del sistema."},
     {"variable": "ac_tiempo_cola_caja", "descripcion": "Acumulador de espera en cola de caja."},

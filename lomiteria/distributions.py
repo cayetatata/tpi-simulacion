@@ -4,11 +4,11 @@ import random
 from typing import Any
 
 from .models import SimulationParams
-from .randoms import NormalDraw, normal_positive, uniform
-from .tables import lookup_a_value, lookup_salon, lookup_tipo_consumo, permanence_range
+from .randoms import SorteoNormal, normal_positiva, uniforme
+from .tables import buscar_salon, buscar_tipo_consumo, buscar_valor_a, rango_permanencia
 
 
-RANDOM_SOURCE_NOTES = [
+NOTAS_ORIGEN_RND = [
     {
         "variable": "Llegada de clientes",
         "rnd": "rnd_llegada_1, rnd_llegada_2",
@@ -54,45 +54,52 @@ RANDOM_SOURCE_NOTES = [
 ]
 
 
-def draw_arrival(rng: random.Random, reloj: float, params: SimulationParams) -> dict[str, Any]:
-    draw: NormalDraw = normal_positive(rng, params.llegada_media, params.llegada_desvio)
+def generar_llegada(generador: random.Random, reloj: float, parametros: SimulationParams) -> dict[str, Any]:
+    """Genera la proxima llegada y deja visibles los dos RND de la normal."""
+    sorteo: SorteoNormal = normal_positiva(generador, parametros.llegada_media, parametros.llegada_desvio)
     return {
-        "rnd_llegada_1": draw.rnd1,
-        "rnd_llegada_2": draw.rnd2,
-        "tiempo_entre_llegadas": draw.value,
-        "proxima_llegada": reloj + draw.value,
+        "rnd_llegada_1": sorteo.rnd1,
+        "rnd_llegada_2": sorteo.rnd2,
+        "tiempo_entre_llegadas": sorteo.value,
+        "proxima_llegada": reloj + sorteo.value,
     }
 
 
-def draw_cashier_service(rng: random.Random, reloj: float, params: SimulationParams) -> dict[str, Any]:
-    rnd = rng.random()
-    service_time = uniform(rnd, params.caja_min, params.caja_max)
-    return {"rnd_caja": rnd, "tiempo_caja": service_time, "fin_caja": reloj + service_time}
+def generar_atencion_caja(generador: random.Random, reloj: float, parametros: SimulationParams) -> dict[str, Any]:
+    """Genera el tiempo de atencion de caja con distribucion uniforme."""
+    rnd = generador.random()
+    tiempo_atencion = uniforme(rnd, parametros.caja_min, parametros.caja_max)
+    return {"rnd_caja": rnd, "tiempo_caja": tiempo_atencion, "fin_caja": reloj + tiempo_atencion}
 
 
-def draw_consumption_type(rng: random.Random, params: SimulationParams) -> dict[str, Any]:
-    rnd = rng.random()
-    return {"rnd_tipo_consumo": rnd, "tipo_consumo": lookup_tipo_consumo(rnd, params)}
+def generar_tipo_consumo(generador: random.Random, parametros: SimulationParams) -> dict[str, Any]:
+    """Decide si el cliente compra para llevar o consume en el local."""
+    rnd = generador.random()
+    return {"rnd_tipo_consumo": rnd, "tipo_consumo": buscar_tipo_consumo(rnd, parametros)}
 
 
-def draw_salon_choice(rng: random.Random, params: SimulationParams) -> dict[str, Any]:
-    rnd = rng.random()
-    return {"rnd_salon": rnd, "salon": lookup_salon(rnd, params)}
+def generar_salon(generador: random.Random, parametros: SimulationParams) -> dict[str, Any]:
+    """Decide el salon elegido para clientes que consumen en el local."""
+    rnd = generador.random()
+    return {"rnd_salon": rnd, "salon": buscar_salon(rnd, parametros)}
 
 
-def draw_a_preparation(rng: random.Random, params: SimulationParams) -> dict[str, Any]:
-    rnd = rng.random()
-    return {"rnd_a_preparacion": rnd, "a_preparacion": lookup_a_value(rnd, params)}
+def generar_valor_a(generador: random.Random, parametros: SimulationParams) -> dict[str, Any]:
+    """Sortea el valor A que se usa para buscar el tiempo RK4."""
+    rnd = generador.random()
+    return {"rnd_a_preparacion": rnd, "a_preparacion": buscar_valor_a(rnd, parametros)}
 
 
-def draw_takeout_preparation(rng: random.Random, params: SimulationParams) -> dict[str, Any]:
-    rnd = rng.random()
-    prep_time = uniform(rnd, params.llevar_min, params.llevar_max)
-    return {"rnd_preparacion_llevar": rnd, "tiempo_preparacion_llevar": prep_time}
+def generar_preparacion_llevar(generador: random.Random, parametros: SimulationParams) -> dict[str, Any]:
+    """Genera el tiempo de preparacion para pedidos para llevar."""
+    rnd = generador.random()
+    tiempo_preparacion = uniforme(rnd, parametros.llevar_min, parametros.llevar_max)
+    return {"rnd_preparacion_llevar": rnd, "tiempo_preparacion_llevar": tiempo_preparacion}
 
 
-def draw_salon_stay(rng: random.Random, salon_name: str, reloj: float, params: SimulationParams) -> dict[str, Any]:
-    rnd = rng.random()
-    low, high = permanence_range(salon_name, reloj, params)
-    stay = uniform(rnd, low, high)
-    return {"rnd_permanencia_salon": rnd, "tiempo_permanencia_salon": stay}
+def generar_permanencia_salon(generador: random.Random, nombre_salon: str, reloj: float, parametros: SimulationParams) -> dict[str, Any]:
+    """Genera la permanencia segun salon y franja horaria."""
+    rnd = generador.random()
+    minimo, maximo = rango_permanencia(nombre_salon, reloj, parametros)
+    permanencia = uniforme(rnd, minimo, maximo)
+    return {"rnd_permanencia_salon": rnd, "tiempo_permanencia_salon": permanencia}

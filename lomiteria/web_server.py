@@ -7,10 +7,10 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
 
-from .distributions import RANDOM_SOURCE_NOTES
-from .metrics import metric_definitions
+from .distributions import NOTAS_ORIGEN_RND
+from .metrics import definiciones_metricas
 from .models import SimulationParams, SimulationResult
-from .object_definitions import OBJECT_DEFINITIONS, STATE_DEFINITIONS, STATISTIC_VARIABLE_DEFINITIONS
+from .object_definitions import DEFINICIONES_ESTADOS_CLIENTE, DEFINICIONES_OBJETOS, DEFINICIONES_VARIABLES_ESTADISTICAS
 from .simulator import simulate
 
 
@@ -41,11 +41,11 @@ def result_to_payload(result: SimulationResult) -> dict[str, Any]:
         "final_row": result.final_row.as_grouped_dict(),
         "final_flat": result.final_row.flat_dict(),
         "metrics": result.metrics,
-        "metric_definitions": metric_definitions(),
-        "statistic_definitions": STATISTIC_VARIABLE_DEFINITIONS,
-        "object_definitions": OBJECT_DEFINITIONS,
-        "state_definitions": STATE_DEFINITIONS,
-        "random_source_notes": RANDOM_SOURCE_NOTES,
+        "metric_definitions": definiciones_metricas(),
+        "statistic_definitions": DEFINICIONES_VARIABLES_ESTADISTICAS,
+        "object_definitions": DEFINICIONES_OBJETOS,
+        "state_definitions": DEFINICIONES_ESTADOS_CLIENTE,
+        "random_source_notes": NOTAS_ORIGEN_RND,
         "controls_15": result.controls_15,
         "controls_30": result.controls_30,
         "rk4_tables": result.rk4_tables,

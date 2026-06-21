@@ -5,7 +5,7 @@ from typing import Any
 from .models import INF, StateRow
 
 
-EVENT_COLUMNS = [
+COLUMNAS_EVENTOS = [
     "rnd_llegada_1",
     "rnd_llegada_2",
     "tiempo_entre_llegadas",
@@ -34,118 +34,119 @@ EVENT_COLUMNS = [
 ]
 
 
-def make_state_row(state: Any, evento: str, randoms: dict[str, Any], omit_temporales: bool = False) -> StateRow:
-    eventos = {column: "" for column in EVENT_COLUMNS}
-    eventos.update(scheduled_event_values(state))
-    eventos.update({key: round_value(value) for key, value in randoms.items() if key in EVENT_COLUMNS})
+def armar_fila_vector(estado: Any, evento: str, valores_aleatorios: dict[str, Any], omitir_temporales: bool = False) -> StateRow:
+    """Arma una fila completa del vector como si fuera una fila de Excel."""
+    eventos = {columna: "" for columna in COLUMNAS_EVENTOS}
+    eventos.update(valores_eventos_programados(estado))
+    eventos.update({clave: redondear(valor) for clave, valor in valores_aleatorios.items() if clave in COLUMNAS_EVENTOS})
 
     return StateRow(
-        nro_evento=state.nro_evento,
+        nro_evento=estado.nro_evento,
         evento=evento,
-        reloj_min=round_value(state.reloj),
-        hora_real=hour_label(state.reloj),
+        reloj_min=redondear(estado.reloj),
+        hora_real=hora_reloj(estado.reloj),
         eventos=eventos,
-        objetos_permanentes=permanent_values(state),
-        variables_estadisticas=stats_values(state),
-        objetos_temporales={} if omit_temporales else temporary_values(state),
+        objetos_permanentes=valores_objetos_permanentes(estado),
+        variables_estadisticas=valores_variables_estadisticas(estado),
+        objetos_temporales={} if omitir_temporales else valores_objetos_temporales(estado),
     )
 
 
-def scheduled_event_values(state: Any) -> dict[str, Any]:
-    values = {
-        "proxima_llegada": event_time(state.proxima_llegada),
-        "fin_caja": event_time(state.fin_caja),
-        "proximo_control_15": event_time(state.proximo_control_15),
-        "proximo_control_30": event_time(state.proximo_control_30),
+def valores_eventos_programados(estado: Any) -> dict[str, Any]:
+    valores = {
+        "proxima_llegada": tiempo_evento(estado.proxima_llegada),
+        "fin_caja": tiempo_evento(estado.fin_caja),
+        "proximo_control_15": tiempo_evento(estado.proximo_control_15),
+        "proximo_control_30": tiempo_evento(estado.proximo_control_30),
     }
-    for prep in state.preparadores:
-        values[f"fin_preparacion_{prep.id}"] = event_time(prep.fin_preparacion_programado)
-    values["fin_permanencia_rojo"] = event_time(next_salon_departure(state, "rojo")[0])
-    values["fin_permanencia_azul"] = event_time(next_salon_departure(state, "azul")[0])
-    return values
+    for preparador in estado.preparadores:
+        valores[f"fin_preparacion_{preparador.id}"] = tiempo_evento(preparador.fin_preparacion_programado)
+    valores["fin_permanencia_rojo"] = tiempo_evento(proxima_salida_salon(estado, "rojo")[0])
+    valores["fin_permanencia_azul"] = tiempo_evento(proxima_salida_salon(estado, "azul")[0])
+    return valores
 
 
-def permanent_values(state: Any) -> dict[str, Any]:
-    values: dict[str, Any] = {
-        "estado_caja": state.caja.estado,
-        "cliente_caja": state.caja.cliente_actual or "",
-        "cola_caja": len(state.cola_caja),
-        "cola_mostrador": len(state.cola_mostrador),
-        "ocupacion_rojo": state.rojo.ocupacion,
-        "cola_rojo": len(state.rojo.cola_entrada),
-        "ocupacion_azul": state.azul.ocupacion,
-        "cola_azul": len(state.azul.cola_entrada),
+def valores_objetos_permanentes(estado: Any) -> dict[str, Any]:
+    valores: dict[str, Any] = {
+        "estado_caja": estado.caja.estado,
+        "cliente_caja": estado.caja.cliente_actual or "",
+        "cola_caja": len(estado.cola_caja),
+        "cola_mostrador": len(estado.cola_mostrador),
+        "ocupacion_rojo": estado.rojo.ocupacion,
+        "cola_rojo": len(estado.rojo.cola_entrada),
+        "ocupacion_azul": estado.azul.ocupacion,
+        "cola_azul": len(estado.azul.cola_entrada),
     }
-    for prep in state.preparadores:
-        values[f"estado_preparador_{prep.id}"] = prep.estado
-        values[f"cliente_preparador_{prep.id}"] = prep.cliente_actual or ""
-    return values
+    for preparador in estado.preparadores:
+        valores[f"estado_preparador_{preparador.id}"] = preparador.estado
+        valores[f"cliente_preparador_{preparador.id}"] = preparador.cliente_actual or ""
+    return valores
 
 
-def stats_values(state: Any) -> dict[str, Any]:
-    values: dict[str, Any] = {
-        "ac_tiempo_permanencia_negocio": round_value(state.stats.ac_tiempo_permanencia_negocio),
-        "ct_clientes_finalizados": state.stats.ct_clientes_finalizados,
-        "ac_tiempo_cola_caja": round_value(state.stats.ac_tiempo_cola_caja),
-        "ct_clientes_pasan_por_caja": state.stats.ct_clientes_pasan_por_caja,
-        "ac_tiempo_cola_mostrador": round_value(state.stats.ac_tiempo_cola_mostrador),
-        "ct_clientes_pasan_por_mostrador": state.stats.ct_clientes_pasan_por_mostrador,
-        "ac_ocupacion_caja": round_value(state.caja.ac_tiempo_ocupada),
-        "ac_ocupacion_rojo_tiempo_persona": round_value(state.rojo.ac_ocupacion_tiempo_persona),
-        "ac_ocupacion_azul_tiempo_persona": round_value(state.azul.ac_ocupacion_tiempo_persona),
-        "max_cola_caja": state.stats.max_cola_caja,
-        "max_cola_mostrador": state.stats.max_cola_mostrador,
-        "max_ocupacion_rojo": state.rojo.max_ocupacion,
-        "max_ocupacion_azul": state.azul.max_ocupacion,
-        "ct_esperaron_rojo_lleno": state.stats.ct_esperaron_rojo_lleno,
-        "ct_esperaron_azul_lleno": state.stats.ct_esperaron_azul_lleno,
+def valores_variables_estadisticas(estado: Any) -> dict[str, Any]:
+    valores: dict[str, Any] = {
+        "ac_tiempo_permanencia_negocio": redondear(estado.estadisticas.ac_tiempo_permanencia_negocio),
+        "ct_clientes_finalizados": estado.estadisticas.ct_clientes_finalizados,
+        "ac_tiempo_cola_caja": redondear(estado.estadisticas.ac_tiempo_cola_caja),
+        "ct_clientes_pasan_por_caja": estado.estadisticas.ct_clientes_pasan_por_caja,
+        "ac_tiempo_cola_mostrador": redondear(estado.estadisticas.ac_tiempo_cola_mostrador),
+        "ct_clientes_pasan_por_mostrador": estado.estadisticas.ct_clientes_pasan_por_mostrador,
+        "ac_ocupacion_caja": redondear(estado.caja.ac_tiempo_ocupada),
+        "ac_ocupacion_rojo_tiempo_persona": redondear(estado.rojo.ac_ocupacion_tiempo_persona),
+        "ac_ocupacion_azul_tiempo_persona": redondear(estado.azul.ac_ocupacion_tiempo_persona),
+        "max_cola_caja": estado.estadisticas.max_cola_caja,
+        "max_cola_mostrador": estado.estadisticas.max_cola_mostrador,
+        "max_ocupacion_rojo": estado.rojo.max_ocupacion,
+        "max_ocupacion_azul": estado.azul.max_ocupacion,
+        "ct_esperaron_rojo_lleno": estado.estadisticas.ct_esperaron_rojo_lleno,
+        "ct_esperaron_azul_lleno": estado.estadisticas.ct_esperaron_azul_lleno,
     }
-    for prep in state.preparadores:
-        values[f"ac_ocupacion_preparador_{prep.id}"] = round_value(prep.ac_tiempo_ocupado)
-    return values
+    for preparador in estado.preparadores:
+        valores[f"ac_ocupacion_preparador_{preparador.id}"] = redondear(preparador.ac_tiempo_ocupado)
+    return valores
 
 
-def temporary_values(state: Any) -> dict[str, Any]:
-    values: dict[str, Any] = {}
-    for client in sorted(state.clientes.values(), key=lambda c: c.id):
-        prefix = f"cliente_{client.id}"
-        values[f"{prefix}_estado"] = client.estado
-        values[f"{prefix}_hora_llegada"] = round_value(client.hora_llegada_negocio)
-        values[f"{prefix}_tipo_consumo"] = client.tipo_consumo
-        values[f"{prefix}_salon"] = client.salon_elegido
-        values[f"{prefix}_hora_inicio_cola_caja"] = blank_or_round(client.hora_inicio_cola_caja)
-        values[f"{prefix}_hora_inicio_cola_mostrador"] = blank_or_round(client.hora_inicio_cola_mostrador)
-        values[f"{prefix}_hora_inicio_cola_salon"] = blank_or_round(client.hora_inicio_cola_salon)
-        values[f"{prefix}_preparador_asignado"] = client.preparador_asignado or ""
-        values[f"{prefix}_hora_inicio_permanencia"] = blank_or_round(client.hora_inicio_permanencia)
-        values[f"{prefix}_fin_programado"] = blank_or_round(client.hora_fin_programada)
-    return values
+def valores_objetos_temporales(estado: Any) -> dict[str, Any]:
+    valores: dict[str, Any] = {}
+    for cliente in sorted(estado.clientes.values(), key=lambda c: c.id):
+        prefijo = f"cliente_{cliente.id}"
+        valores[f"{prefijo}_estado"] = cliente.estado
+        valores[f"{prefijo}_hora_llegada"] = redondear(cliente.hora_llegada_negocio)
+        valores[f"{prefijo}_tipo_consumo"] = cliente.tipo_consumo
+        valores[f"{prefijo}_salon"] = cliente.salon_elegido
+        valores[f"{prefijo}_hora_inicio_cola_caja"] = blanco_o_redondeado(cliente.hora_inicio_cola_caja)
+        valores[f"{prefijo}_hora_inicio_cola_mostrador"] = blanco_o_redondeado(cliente.hora_inicio_cola_mostrador)
+        valores[f"{prefijo}_hora_inicio_cola_salon"] = blanco_o_redondeado(cliente.hora_inicio_cola_salon)
+        valores[f"{prefijo}_preparador_asignado"] = cliente.preparador_asignado or ""
+        valores[f"{prefijo}_hora_inicio_permanencia"] = blanco_o_redondeado(cliente.hora_inicio_permanencia)
+        valores[f"{prefijo}_fin_programado"] = blanco_o_redondeado(cliente.hora_fin_programada)
+    return valores
 
 
-def next_salon_departure(state: Any, salon_name: str) -> tuple[float, int | None]:
-    wanted = "PSR" if salon_name == "rojo" else "PSA"
-    times = [
-        (client.hora_fin_programada or INF, client.id)
-        for client in state.clientes.values()
-        if client.estado == wanted
+def proxima_salida_salon(estado: Any, nombre_salon: str) -> tuple[float, int | None]:
+    estado_buscado = "PSR" if nombre_salon == "rojo" else "PSA"
+    tiempos = [
+        (cliente.hora_fin_programada or INF, cliente.id)
+        for cliente in estado.clientes.values()
+        if cliente.estado == estado_buscado
     ]
-    if not times:
+    if not tiempos:
         return INF, None
-    return min(times, key=lambda item: item[0])
+    return min(tiempos, key=lambda item: item[0])
 
 
-def hour_label(reloj_min: float) -> str:
+def hora_reloj(reloj_min: float) -> str:
     total = 11 * 60 + int(round(reloj_min))
     return f"{total // 60:02d}:{total % 60:02d}"
 
 
-def event_time(value: float) -> float | str:
-    return "" if value == INF else round_value(value)
+def tiempo_evento(valor: float) -> float | str:
+    return "" if valor == INF else redondear(valor)
 
 
-def blank_or_round(value: float | None) -> float | str:
-    return "" if value is None else round_value(value)
+def blanco_o_redondeado(valor: float | None) -> float | str:
+    return "" if valor is None else redondear(valor)
 
 
-def round_value(value: Any) -> Any:
-    return round(value, 4) if isinstance(value, float) else value
+def redondear(valor: Any) -> Any:
+    return round(valor, 4) if isinstance(valor, float) else valor

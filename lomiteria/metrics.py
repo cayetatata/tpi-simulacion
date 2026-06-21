@@ -3,25 +3,26 @@ from __future__ import annotations
 from typing import Any
 
 
-def calculate_metrics(state: Any) -> dict[str, float]:
-    final_clock = max(state.reloj, 1e-9)
-    prep_total = sum(prep.ac_tiempo_ocupado for prep in state.preparadores)
-    local_waits = state.stats.ct_esperaron_rojo_lleno + state.stats.ct_esperaron_azul_lleno
+def calcular_metricas(estado: Any) -> dict[str, float]:
+    """Calcula los indicadores finales a partir de acumuladores del vector."""
+    reloj_final = max(estado.reloj, 1e-9)
+    ocupacion_total_preparadores = sum(preparador.ac_tiempo_ocupado for preparador in estado.preparadores)
+    esperas_por_salon_lleno = estado.estadisticas.ct_esperaron_rojo_lleno + estado.estadisticas.ct_esperaron_azul_lleno
     return {
-        "tiempo_promedio_permanencia_negocio": _safe_div(state.stats.ac_tiempo_permanencia_negocio, state.stats.ct_clientes_finalizados),
-        "tiempo_promedio_cola_caja": _safe_div(state.stats.ac_tiempo_cola_caja, state.stats.ct_clientes_pasan_por_caja),
-        "tiempo_promedio_cola_mostrador": _safe_div(state.stats.ac_tiempo_cola_mostrador, state.stats.ct_clientes_pasan_por_mostrador),
-        "porcentaje_ocupacion_caja": state.caja.ac_tiempo_ocupada / final_clock * 100.0,
-        "porcentaje_ocupacion_preparadores": prep_total / (len(state.preparadores) * final_clock) * 100.0,
-        "max_cola_caja": float(state.stats.max_cola_caja),
-        "max_cola_mostrador": float(state.stats.max_cola_mostrador),
-        "clientes_esperaron_salon_rojo_lleno": float(state.stats.ct_esperaron_rojo_lleno),
-        "clientes_esperaron_salon_azul_lleno": float(state.stats.ct_esperaron_azul_lleno),
-        "clientes_esperaron_salon_lleno_total": float(local_waits),
+        "tiempo_promedio_permanencia_negocio": _dividir_si_hay_datos(estado.estadisticas.ac_tiempo_permanencia_negocio, estado.estadisticas.ct_clientes_finalizados),
+        "tiempo_promedio_cola_caja": _dividir_si_hay_datos(estado.estadisticas.ac_tiempo_cola_caja, estado.estadisticas.ct_clientes_pasan_por_caja),
+        "tiempo_promedio_cola_mostrador": _dividir_si_hay_datos(estado.estadisticas.ac_tiempo_cola_mostrador, estado.estadisticas.ct_clientes_pasan_por_mostrador),
+        "porcentaje_ocupacion_caja": estado.caja.ac_tiempo_ocupada / reloj_final * 100.0,
+        "porcentaje_ocupacion_preparadores": ocupacion_total_preparadores / (len(estado.preparadores) * reloj_final) * 100.0,
+        "max_cola_caja": float(estado.estadisticas.max_cola_caja),
+        "max_cola_mostrador": float(estado.estadisticas.max_cola_mostrador),
+        "clientes_esperaron_salon_rojo_lleno": float(estado.estadisticas.ct_esperaron_rojo_lleno),
+        "clientes_esperaron_salon_azul_lleno": float(estado.estadisticas.ct_esperaron_azul_lleno),
+        "clientes_esperaron_salon_lleno_total": float(esperas_por_salon_lleno),
     }
 
 
-def metric_definitions() -> list[dict[str, Any]]:
+def definiciones_metricas() -> list[dict[str, Any]]:
     return [
         {
             "metrica": "tiempo_promedio_permanencia_negocio",
@@ -122,5 +123,5 @@ def metric_definitions() -> list[dict[str, Any]]:
     ]
 
 
-def _safe_div(numerator: float, denominator: int) -> float:
-    return numerator / denominator if denominator else 0.0
+def _dividir_si_hay_datos(numerador: float, denominador: int) -> float:
+    return numerador / denominador if denominador else 0.0

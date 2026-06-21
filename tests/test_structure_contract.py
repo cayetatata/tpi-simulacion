@@ -7,9 +7,9 @@ class StructureContractTests(unittest.TestCase):
         import lomiteria.object_definitions as object_definitions
         import lomiteria.state_vector as state_vector
 
-        self.assertTrue(distributions.RANDOM_SOURCE_NOTES)
-        self.assertTrue(object_definitions.OBJECT_DEFINITIONS)
-        self.assertTrue(state_vector.EVENT_COLUMNS)
+        self.assertTrue(distributions.NOTAS_ORIGEN_RND)
+        self.assertTrue(object_definitions.DEFINICIONES_OBJETOS)
+        self.assertTrue(state_vector.COLUMNAS_EVENTOS)
 
 
 if __name__ == "__main__":

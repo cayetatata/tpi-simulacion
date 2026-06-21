@@ -3,41 +3,45 @@ from __future__ import annotations
 from .models import SimulationParams
 
 
-def build_rk4_tables(params: SimulationParams) -> tuple[dict[int, list[dict[str, float]]], dict[int, float]]:
-    tables: dict[int, list[dict[str, float]]] = {}
-    ready_times: dict[int, float] = {}
+def construir_tablas_rk4(parametros: SimulationParams) -> tuple[dict[int, list[dict[str, float]]], dict[int, float]]:
+    """Calcula las tablas RK4 para cada valor posible de A."""
+    tablas: dict[int, list[dict[str, float]]] = {}
+    tiempos_listos: dict[int, float] = {}
 
-    for a_value in params.a_values:
+    for valor_a in parametros.a_values:
         t = 0.0
-        l_value = float(a_value)
-        rows: list[dict[str, float]] = []
+        valor_l = float(valor_a)
+        filas: list[dict[str, float]] = []
 
-        while l_value <= params.rk_limit_l:
-            k1 = 6.0 + 3.0 * a_value
-            k2 = 6.0 + 3.0 * a_value
-            k3 = 6.0 + 3.0 * a_value
-            k4 = 6.0 + 3.0 * a_value
-            next_l = l_value + params.rk_h / 6.0 * (k1 + 2.0 * k2 + 2.0 * k3 + k4)
-            next_t = t + params.rk_h
+        while valor_l <= parametros.rk_limit_l:
+            k1 = 6.0 + 3.0 * valor_a
+            k2 = 6.0 + 3.0 * valor_a
+            k3 = 6.0 + 3.0 * valor_a
+            k4 = 6.0 + 3.0 * valor_a
+            proximo_l = valor_l + parametros.rk_h / 6.0 * (k1 + 2.0 * k2 + 2.0 * k3 + k4)
+            proximo_t = t + parametros.rk_h
 
-            rows.append(
+            filas.append(
                 {
                     "t": round(t, 6),
-                    "L": round(next_l, 6),
+                    "L": round(proximo_l, 6),
                     "k1": round(k1, 6),
                     "k2": round(k2, 6),
                     "k3": round(k3, 6),
                     "k4": round(k4, 6),
-                    "L(i+1)": round(next_l, 6),
-                    "t(i+1)": round(next_t, 6),
-                    "A": float(a_value),
-                    "tiempo_min": round(next_t * params.rk_minutes_per_unit, 6),
+                    "L(i+1)": round(proximo_l, 6),
+                    "t(i+1)": round(proximo_t, 6),
+                    "A": float(valor_a),
+                    "tiempo_min": round(proximo_t * parametros.rk_minutes_per_unit, 6),
                 }
             )
-            t = next_t
-            l_value = next_l
+            t = proximo_t
+            valor_l = proximo_l
 
-        tables[a_value] = rows
-        ready_times[a_value] = rows[-1]["tiempo_min"]
+        tablas[valor_a] = filas
+        tiempos_listos[valor_a] = filas[-1]["tiempo_min"]
 
-    return tables, ready_times
+    return tablas, tiempos_listos
+
+
+build_rk4_tables = construir_tablas_rk4
