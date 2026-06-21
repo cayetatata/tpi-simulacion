@@ -112,11 +112,13 @@ const groups = [
 
 let latestPayload = null;
 let activeVectorFilter = "ALL";
+let activeRowScope = "requested";
 
 document.addEventListener("DOMContentLoaded", () => {
   buildForm();
   bindNavigation();
   bindVectorFilters();
+  bindRowScope();
   document.getElementById("simulateButton").addEventListener("click", runSimulation);
   document.getElementById("resetButton").addEventListener("click", () => setParamValues(defaultParams));
 });
@@ -158,10 +160,29 @@ function bindNavigation() {
 function bindVectorFilters() {
   document.querySelectorAll("[data-vector-filter]").forEach((button) => {
     button.addEventListener("click", () => {
-      activeVectorFilter = button.dataset.vectorFilter;
-      document.querySelectorAll("[data-vector-filter]").forEach((item) => item.classList.remove("active"));
+      setActiveVectorFilter(button.dataset.vectorFilter);
+      if (latestPayload) renderVectorTable(currentVectorRows());
+    });
+  });
+}
+
+function setActiveVectorFilter(filter) {
+  activeVectorFilter = filter;
+  document.querySelectorAll("[data-vector-filter]").forEach((item) => {
+    item.classList.toggle("active", item.dataset.vectorFilter === filter);
+  });
+}
+
+function bindRowScope() {
+  document.querySelectorAll("[data-row-scope]").forEach((button) => {
+    button.addEventListener("click", () => {
+      activeRowScope = button.dataset.rowScope;
+      document.querySelectorAll("[data-row-scope]").forEach((item) => item.classList.remove("active"));
       button.classList.add("active");
-      if (latestPayload) renderVectorTable(latestPayload.vector_rows || []);
+      if (activeRowScope === "last" && activeVectorFilter === "ALL") {
+        setActiveVectorFilter("RELOJ_EVENTO");
+      }
+      if (latestPayload) renderVectorTable(currentVectorRows());
     });
   });
 }
@@ -213,12 +234,18 @@ function activateView(name) {
 function renderPayload(payload) {
   renderKpis(payload);
   renderMetrics(payload);
-  renderVectorTable(payload.vector_rows || []);
+  renderStatisticCards(payload);
+  renderVectorTable(currentVectorRows());
   renderTable("finalTable", [payload.final_flat || {}]);
   renderTable("controls15Table", payload.controls_15 || []);
   renderTable("controls30Table", payload.controls_30 || []);
   renderLookupTables(payload.intermediate_tables || {});
   renderRkTables(payload.rk4_tables || {});
+}
+
+function currentVectorRows() {
+  if (!latestPayload) return [];
+  return activeRowScope === "last" ? (latestPayload.last_rows || []) : (latestPayload.vector_rows || []);
 }
 
 function renderKpis(payload) {
@@ -295,6 +322,7 @@ function renderMetrics(payload) {
           </div>
           <strong class="metric-value">${formatMetricValue(value)}</strong>
         </div>
+        <div class="metric-type">${definition.tipo || "Metrica"}</div>
         <div class="metric-meta">
           <span>Formula</span>
           <code>${definition.formula}</code>
@@ -304,6 +332,29 @@ function renderMetrics(payload) {
           <code>${(definition.variables || []).join(", ")}</code>
         </div>
         <p class="metric-enunciado">${definition.enunciado}</p>
+      </article>
+    `;
+  }).join("");
+}
+
+function renderStatisticCards(payload) {
+  const host = document.getElementById("statisticsGrid");
+  const stats = payload.final_row?.VARIABLES_ESTADISTICAS || {};
+  const definitions = payload.statistic_definitions || [];
+  const descriptions = Object.fromEntries(definitions.map((item) => [item.variable, item.descripcion]));
+  const entries = Object.entries(stats);
+  if (!entries.length) {
+    host.innerHTML = emptyMessage("No hay variables estadisticas para mostrar.");
+    return;
+  }
+  host.innerHTML = entries.map(([name, value]) => {
+    const baseName = name.replace(/_[0-9]+$/, "_i");
+    const description = descriptions[name] || descriptions[baseName] || "Variable estadistica usada para lectura del vector y calculo de resultados.";
+    return `
+      <article class="stat-card">
+        <span>${name}</span>
+        <strong>${formatCell(value)}</strong>
+        <p>${description}</p>
       </article>
     `;
   }).join("");
@@ -354,6 +405,7 @@ function renderLookupRow(row) {
 function renderRkTables(tables) {
   const host = document.getElementById("rkTable");
   const entries = Object.entries(tables);
+  const params = latestPayload?.rk4_parameters || {};
   if (!entries.length) {
     host.innerHTML = emptyMessage("No hay tablas Runge-Kutta calculadas.");
     return;
@@ -364,13 +416,19 @@ function renderRkTables(tables) {
       <article class="rk-card">
         <div class="rk-card-head">
           <div>
-            <p class="metric-key">dL/dt = 3A + 6</p>
+            <p class="metric-key">${params.ecuacion || "dL/dt = 3A + 6"}</p>
             <h5>A = ${aValue}</h5>
           </div>
           <div class="rk-summary">
             <span>Listo</span>
             <strong>${metricNumber(last.tiempo_min)} min</strong>
           </div>
+        </div>
+        <div class="rk-facts">
+          <span>h = ${formatCell(params.h)}</span>
+          <span>L inicial = ${aValue}</span>
+          <span>Listo cuando L > ${formatCell(params.limite_l)}</span>
+          <span>t = 1 equivale a ${formatCell(params.minutos_por_t)} min</span>
         </div>
         <div class="table-host mini-table">
           ${tableHtml(sampleRkRows(rows))}
@@ -397,29 +455,6 @@ function tableHtml(rows) {
       <tbody>${rows.map((row) => `<tr>${columns.map((column) => `<td>${formatCell(row[column])}</td>`).join("")}</tr>`).join("")}</tbody>
     </table>
   `;
-}
-
-function metricRows() {
-  if (!latestPayload) return [];
-  return Object.entries(latestPayload.metrics || {}).map(([metrica, valor]) => ({ metrica, valor: metricNumber(valor) }));
-}
-
-function intermediateRows() {
-  if (!latestPayload) return [];
-  const rows = [];
-  Object.entries(latestPayload.intermediate_tables || {}).forEach(([tabla, values]) => {
-    values.forEach((value) => rows.push({ tabla, ...value }));
-  });
-  return rows;
-}
-
-function rkRows() {
-  if (!latestPayload) return [];
-  const rows = [];
-  Object.entries(latestPayload.rk4_tables || {}).forEach(([aValue, values]) => {
-    values.forEach((value) => rows.push({ tabla: `A=${aValue}`, ...value }));
-  });
-  return rows;
 }
 
 function unique(values) {

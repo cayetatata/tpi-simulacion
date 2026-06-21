@@ -144,6 +144,7 @@ class StateRow:
 
 @dataclass
 class SimulationResult:
+    params: SimulationParams
     rows: list[StateRow]
     last_rows: list[StateRow]
     final_row: StateRow

@@ -20,12 +20,15 @@ class WebServerTests(unittest.TestCase):
         self.assertIn("summary", payload)
         self.assertIn("metrics", payload)
         self.assertIn("final_row", payload)
+        self.assertIn("last_rows", payload)
         self.assertIn("controls_15", payload)
         self.assertIn("controls_30", payload)
         self.assertIn("rk4_tables", payload)
         self.assertIn("intermediate_tables", payload)
         self.assertIn("metric_definitions", payload)
+        self.assertIn("statistic_definitions", payload)
         self.assertEqual(payload["summary"]["final_event"], "fin_simulacion")
+        self.assertLessEqual(len(payload["last_rows"]), 10)
 
     def test_metric_definitions_explain_formula_variables_and_requirement(self):
         result = simulate(SimulationParams(x_minutes=30.0, display_from=1, display_count=2, seed=8))

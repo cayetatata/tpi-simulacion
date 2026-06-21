@@ -6,38 +6,19 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from .models import Caja, Cliente, Estadisticas, INF, Preparador, Salon, SimulationParams, SimulationResult, StateRow
-from .randoms import normal_positive, uniform
+from .distributions import (
+    draw_a_preparation,
+    draw_arrival,
+    draw_cashier_service,
+    draw_consumption_type,
+    draw_salon_choice,
+    draw_salon_stay,
+    draw_takeout_preparation,
+)
+from .metrics import calculate_metrics
 from .rk4 import build_rk4_tables
-from .tables import intermediate_tables, lookup_a_value, lookup_salon, lookup_tipo_consumo, permanence_range
-
-
-EVENT_COLUMNS = [
-    "rnd_llegada_1",
-    "rnd_llegada_2",
-    "tiempo_entre_llegadas",
-    "proxima_llegada",
-    "rnd_caja",
-    "tiempo_caja",
-    "fin_caja",
-    "rnd_tipo_consumo",
-    "tipo_consumo",
-    "rnd_salon",
-    "salon",
-    "rnd_a_preparacion",
-    "a_preparacion",
-    "tiempo_preparacion_local",
-    "rnd_preparacion_llevar",
-    "tiempo_preparacion_llevar",
-    "fin_preparacion_1",
-    "fin_preparacion_2",
-    "fin_preparacion_3",
-    "rnd_permanencia_salon",
-    "tiempo_permanencia_salon",
-    "fin_permanencia_rojo",
-    "fin_permanencia_azul",
-    "proximo_control_15",
-    "proximo_control_30",
-]
+from .state_vector import make_state_row, next_salon_departure
+from .tables import intermediate_tables
 
 
 @dataclass
@@ -78,10 +59,11 @@ def simulate(params: SimulationParams) -> SimulationResult:
     )
 
     visible_rows: list[StateRow] = []
+    last_rows: deque[StateRow] = deque(maxlen=10)
     first_arrival = _draw_arrival(state)
     state.proxima_llegada = first_arrival["proxima_llegada"]
-    initial = _make_row(state, "Inicializacion", first_arrival)
-    _store_visible_row(initial, visible_rows, params)
+    initial = make_state_row(state, "Inicializacion", first_arrival)
+    _store_row(initial, visible_rows, last_rows, params)
 
     final_row = initial
     while state.nro_evento < params.max_iterations:
@@ -89,26 +71,27 @@ def simulate(params: SimulationParams) -> SimulationResult:
         if event_time == INF or event_time > params.x_minutes:
             _advance_time(state, params.x_minutes)
             state.nro_evento += 1
-            final_row = _make_row(state, "fin_simulacion", {}, omit_temporales=True)
+            final_row = make_state_row(state, "fin_simulacion", {}, omit_temporales=True)
+            _store_row(final_row, visible_rows, last_rows, params)
             break
 
         _advance_time(state, event_time)
         state.nro_evento += 1
         randoms = _process_event(state, event_name, payload)
-        row = _make_row(state, event_name, randoms)
-        _store_visible_row(row, visible_rows, params)
+        row = make_state_row(state, event_name, randoms)
+        _store_row(row, visible_rows, last_rows, params)
         final_row = row
 
     else:
-        final_row = _make_row(state, "limite_iteraciones", {}, omit_temporales=True)
-
-    if final_row.evento == "fin_simulacion":
-        _store_visible_row(final_row, visible_rows, params)
+        final_row = make_state_row(state, "limite_iteraciones", {}, omit_temporales=True)
+        _store_row(final_row, visible_rows, last_rows, params)
 
     return SimulationResult(
+        params=params,
         rows=visible_rows[: params.display_count],
+        last_rows=list(last_rows),
         final_row=final_row,
-        metrics=_metrics(state),
+        metrics=calculate_metrics(state),
         controls_15=state.controls_15,
         controls_30=state.controls_30,
         rk4_tables=rk_tables,
@@ -117,7 +100,8 @@ def simulate(params: SimulationParams) -> SimulationResult:
     )
 
 
-def _store_visible_row(row: StateRow, visible_rows: list[StateRow], params: SimulationParams) -> None:
+def _store_row(row: StateRow, visible_rows: list[StateRow], last_rows: deque[StateRow], params: SimulationParams) -> None:
+    last_rows.append(row)
     if params.display_from <= row.nro_evento < params.display_from + params.display_count:
         visible_rows.append(row)
 
@@ -145,8 +129,8 @@ def _next_event(state: SimulationState) -> tuple[str, float, Any]:
     for preparador in state.preparadores:
         candidates.append((preparador.fin_preparacion_programado, 3 + preparador.id, f"fin_preparacion_mostrador_{preparador.id}", preparador.id))
 
-    rojo_fin = _next_salon_departure(state, "rojo")
-    azul_fin = _next_salon_departure(state, "azul")
+    rojo_fin = next_salon_departure(state, "rojo")
+    azul_fin = next_salon_departure(state, "azul")
     candidates.append((rojo_fin[0], 20, "fin_permanencia_rojo", rojo_fin[1]))
     candidates.append((azul_fin[0], 21, "fin_permanencia_azul", azul_fin[1]))
 
@@ -207,16 +191,16 @@ def _event_cashier_done(state: SimulationState) -> dict[str, Any]:
     randoms: dict[str, Any] = {}
     if client_id is not None and client_id in state.clientes:
         client = state.clientes[client_id]
-        rnd_tipo = state.rng.random()
-        client.tipo_consumo = lookup_tipo_consumo(rnd_tipo, state.params)
-        randoms["rnd_tipo_consumo"] = rnd_tipo
-        randoms["tipo_consumo"] = client.tipo_consumo
+        consumption = draw_consumption_type(state.rng, state.params)
+        client.tipo_consumo = consumption["tipo_consumo"]
+        randoms.update(consumption)
         if client.tipo_consumo == "local":
-            rnd_salon = state.rng.random()
-            rnd_a = state.rng.random()
-            client.salon_elegido = lookup_salon(rnd_salon, state.params)
-            client.a_preparacion = lookup_a_value(rnd_a, state.params)
-            randoms.update({"rnd_salon": rnd_salon, "salon": client.salon_elegido, "rnd_a_preparacion": rnd_a, "a_preparacion": client.a_preparacion})
+            salon = draw_salon_choice(state.rng, state.params)
+            a_value = draw_a_preparation(state.rng, state.params)
+            client.salon_elegido = salon["salon"]
+            client.a_preparacion = a_value["a_preparacion"]
+            randoms.update(salon)
+            randoms.update(a_value)
         client.estado = "EPM"
         client.hora_inicio_cola_mostrador = state.reloj
         _send_to_preparation_or_queue(state, client_id, randoms)
@@ -273,13 +257,7 @@ def _event_salon_done(state: SimulationState, salon_name: str, client_id: int) -
 
 
 def _draw_arrival(state: SimulationState) -> dict[str, Any]:
-    draw = normal_positive(state.rng, state.params.llegada_media, state.params.llegada_desvio)
-    return {
-        "rnd_llegada_1": draw.rnd1,
-        "rnd_llegada_2": draw.rnd2,
-        "tiempo_entre_llegadas": draw.value,
-        "proxima_llegada": state.reloj + draw.value,
-    }
+    return draw_arrival(state.rng, state.reloj, state.params)
 
 
 def _start_cashier_service(state: SimulationState, client_id: int) -> dict[str, Any]:
@@ -289,10 +267,9 @@ def _start_cashier_service(state: SimulationState, client_id: int) -> dict[str, 
     state.caja.cliente_actual = client_id
     state.caja.hora_inicio_ocupacion = state.reloj
     state.stats.ct_clientes_pasan_por_caja += 1
-    rnd = state.rng.random()
-    service_time = uniform(rnd, state.params.caja_min, state.params.caja_max)
-    state.fin_caja = state.reloj + service_time
-    return {"rnd_caja": rnd, "tiempo_caja": service_time, "fin_caja": state.fin_caja}
+    randoms = draw_cashier_service(state.rng, state.reloj, state.params)
+    state.fin_caja = randoms["fin_caja"]
+    return randoms
 
 
 def _send_to_preparation_or_queue(state: SimulationState, client_id: int, randoms: dict[str, Any]) -> None:
@@ -321,11 +298,9 @@ def _start_preparation(state: SimulationState, preparador: Preparador, client_id
         client.tiempo_preparacion = prep_time
         randoms["tiempo_preparacion_local"] = prep_time
     else:
-        rnd = state.rng.random()
-        prep_time = uniform(rnd, state.params.llevar_min, state.params.llevar_max)
+        randoms.update(draw_takeout_preparation(state.rng, state.params))
+        prep_time = randoms["tiempo_preparacion_llevar"]
         client.tiempo_preparacion = prep_time
-        randoms["rnd_preparacion_llevar"] = rnd
-        randoms["tiempo_preparacion_llevar"] = prep_time
 
     preparador.fin_preparacion_programado = state.reloj + prep_time
     client.hora_fin_programada = preparador.fin_preparacion_programado
@@ -357,11 +332,10 @@ def _start_salon_stay(state: SimulationState, client_id: int, salon_name: str) -
     salon.max_ocupacion = max(salon.max_ocupacion, salon.ocupacion)
     client.estado = "PSR" if salon_name == "rojo" else "PSA"
     client.hora_inicio_permanencia = state.reloj
-    rnd = state.rng.random()
-    low, high = permanence_range(salon_name, state.reloj, state.params)
-    stay = uniform(rnd, low, high)
+    randoms = draw_salon_stay(state.rng, salon_name, state.reloj, state.params)
+    stay = randoms["tiempo_permanencia_salon"]
     client.hora_fin_programada = state.reloj + stay
-    return {"rnd_permanencia_salon": rnd, "tiempo_permanencia_salon": stay}
+    return randoms
 
 
 def _finish_client(state: SimulationState, client_id: int) -> None:
@@ -372,148 +346,6 @@ def _finish_client(state: SimulationState, client_id: int) -> None:
     state.stats.ct_clientes_finalizados += 1
 
 
-def _next_salon_departure(state: SimulationState, salon_name: str) -> tuple[float, int | None]:
-    wanted = "PSR" if salon_name == "rojo" else "PSA"
-    times = [
-        (client.hora_fin_programada or INF, client.id)
-        for client in state.clientes.values()
-        if client.estado == wanted
-    ]
-    if not times:
-        return INF, None
-    return min(times, key=lambda item: item[0])
-
-
 def _salon(state: SimulationState, salon_name: str) -> Salon:
     assert state.rojo is not None and state.azul is not None
     return state.rojo if salon_name == "rojo" else state.azul
-
-
-def _make_row(state: SimulationState, evento: str, randoms: dict[str, Any], omit_temporales: bool = False) -> StateRow:
-    eventos = {column: "" for column in EVENT_COLUMNS}
-    eventos.update(_scheduled_event_values(state))
-    eventos.update({key: _round(value) for key, value in randoms.items() if key in EVENT_COLUMNS})
-
-    return StateRow(
-        nro_evento=state.nro_evento,
-        evento=evento,
-        reloj_min=_round(state.reloj),
-        hora_real=_hour_label(state.reloj),
-        eventos=eventos,
-        objetos_permanentes=_permanent_values(state),
-        variables_estadisticas=_stats_values(state),
-        objetos_temporales={} if omit_temporales else _temporary_values(state),
-    )
-
-
-def _scheduled_event_values(state: SimulationState) -> dict[str, Any]:
-    values = {
-        "proxima_llegada": _event_time(state.proxima_llegada),
-        "fin_caja": _event_time(state.fin_caja),
-        "proximo_control_15": _event_time(state.proximo_control_15),
-        "proximo_control_30": _event_time(state.proximo_control_30),
-    }
-    for prep in state.preparadores:
-        values[f"fin_preparacion_{prep.id}"] = _event_time(prep.fin_preparacion_programado)
-    values["fin_permanencia_rojo"] = _event_time(_next_salon_departure(state, "rojo")[0])
-    values["fin_permanencia_azul"] = _event_time(_next_salon_departure(state, "azul")[0])
-    return values
-
-
-def _permanent_values(state: SimulationState) -> dict[str, Any]:
-    assert state.rojo is not None and state.azul is not None
-    values: dict[str, Any] = {
-        "estado_caja": state.caja.estado,
-        "cliente_caja": state.caja.cliente_actual or "",
-        "cola_caja": len(state.cola_caja),
-        "cola_mostrador": len(state.cola_mostrador),
-        "ocupacion_rojo": state.rojo.ocupacion,
-        "cola_rojo": len(state.rojo.cola_entrada),
-        "ocupacion_azul": state.azul.ocupacion,
-        "cola_azul": len(state.azul.cola_entrada),
-    }
-    for prep in state.preparadores:
-        values[f"estado_preparador_{prep.id}"] = prep.estado
-        values[f"cliente_preparador_{prep.id}"] = prep.cliente_actual or ""
-    return values
-
-
-def _stats_values(state: SimulationState) -> dict[str, Any]:
-    assert state.rojo is not None and state.azul is not None
-    values: dict[str, Any] = {
-        "ac_tiempo_permanencia_negocio": _round(state.stats.ac_tiempo_permanencia_negocio),
-        "ct_clientes_finalizados": state.stats.ct_clientes_finalizados,
-        "ac_tiempo_cola_caja": _round(state.stats.ac_tiempo_cola_caja),
-        "ct_clientes_pasan_por_caja": state.stats.ct_clientes_pasan_por_caja,
-        "ac_tiempo_cola_mostrador": _round(state.stats.ac_tiempo_cola_mostrador),
-        "ct_clientes_pasan_por_mostrador": state.stats.ct_clientes_pasan_por_mostrador,
-        "ac_ocupacion_caja": _round(state.caja.ac_tiempo_ocupada),
-        "ac_ocupacion_rojo_tiempo_persona": _round(state.rojo.ac_ocupacion_tiempo_persona),
-        "ac_ocupacion_azul_tiempo_persona": _round(state.azul.ac_ocupacion_tiempo_persona),
-        "max_cola_caja": state.stats.max_cola_caja,
-        "max_cola_mostrador": state.stats.max_cola_mostrador,
-        "max_ocupacion_rojo": state.rojo.max_ocupacion,
-        "max_ocupacion_azul": state.azul.max_ocupacion,
-        "ct_esperaron_rojo_lleno": state.stats.ct_esperaron_rojo_lleno,
-        "ct_esperaron_azul_lleno": state.stats.ct_esperaron_azul_lleno,
-    }
-    for prep in state.preparadores:
-        values[f"ac_ocupacion_preparador_{prep.id}"] = _round(prep.ac_tiempo_ocupado)
-    return values
-
-
-def _temporary_values(state: SimulationState) -> dict[str, Any]:
-    values: dict[str, Any] = {}
-    for client in sorted(state.clientes.values(), key=lambda c: c.id):
-        prefix = f"cliente_{client.id}"
-        values[f"{prefix}_estado"] = client.estado
-        values[f"{prefix}_hora_llegada"] = _round(client.hora_llegada_negocio)
-        values[f"{prefix}_tipo_consumo"] = client.tipo_consumo
-        values[f"{prefix}_salon"] = client.salon_elegido
-        values[f"{prefix}_hora_inicio_cola_caja"] = _blank_or_round(client.hora_inicio_cola_caja)
-        values[f"{prefix}_hora_inicio_cola_mostrador"] = _blank_or_round(client.hora_inicio_cola_mostrador)
-        values[f"{prefix}_hora_inicio_cola_salon"] = _blank_or_round(client.hora_inicio_cola_salon)
-        values[f"{prefix}_preparador_asignado"] = client.preparador_asignado or ""
-        values[f"{prefix}_hora_inicio_permanencia"] = _blank_or_round(client.hora_inicio_permanencia)
-        values[f"{prefix}_fin_programado"] = _blank_or_round(client.hora_fin_programada)
-    return values
-
-
-def _metrics(state: SimulationState) -> dict[str, float]:
-    assert state.rojo is not None and state.azul is not None
-    final_clock = max(state.reloj, 1e-9)
-    prep_total = sum(prep.ac_tiempo_ocupado for prep in state.preparadores)
-    local_waits = state.stats.ct_esperaron_rojo_lleno + state.stats.ct_esperaron_azul_lleno
-    return {
-        "tiempo_promedio_permanencia_negocio": _safe_div(state.stats.ac_tiempo_permanencia_negocio, state.stats.ct_clientes_finalizados),
-        "tiempo_promedio_cola_caja": _safe_div(state.stats.ac_tiempo_cola_caja, state.stats.ct_clientes_pasan_por_caja),
-        "tiempo_promedio_cola_mostrador": _safe_div(state.stats.ac_tiempo_cola_mostrador, state.stats.ct_clientes_pasan_por_mostrador),
-        "porcentaje_ocupacion_caja": state.caja.ac_tiempo_ocupada / final_clock * 100.0,
-        "porcentaje_ocupacion_preparadores": prep_total / (len(state.preparadores) * final_clock) * 100.0,
-        "max_cola_caja": float(state.stats.max_cola_caja),
-        "max_cola_mostrador": float(state.stats.max_cola_mostrador),
-        "clientes_esperaron_salon_rojo_lleno": float(state.stats.ct_esperaron_rojo_lleno),
-        "clientes_esperaron_salon_azul_lleno": float(state.stats.ct_esperaron_azul_lleno),
-        "clientes_esperaron_salon_lleno_total": float(local_waits),
-    }
-
-
-def _safe_div(numerator: float, denominator: int) -> float:
-    return numerator / denominator if denominator else 0.0
-
-
-def _hour_label(reloj_min: float) -> str:
-    total = 11 * 60 + int(round(reloj_min))
-    return f"{total // 60:02d}:{total % 60:02d}"
-
-
-def _event_time(value: float) -> float | str:
-    return "" if value == INF else _round(value)
-
-
-def _blank_or_round(value: float | None) -> float | str:
-    return "" if value is None else _round(value)
-
-
-def _round(value: Any) -> Any:
-    return round(value, 4) if isinstance(value, float) else value

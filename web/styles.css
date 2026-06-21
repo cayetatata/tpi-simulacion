@@ -405,14 +405,16 @@ h5 {
   font-size: 14px;
 }
 
-.vector-filter-bar {
+.vector-filter-bar,
+.row-scope-bar {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 12px;
 }
 
-.filter-chip {
+.filter-chip,
+.scope-chip {
   min-height: 36px;
   padding: 8px 12px;
   color: var(--ink);
@@ -422,7 +424,9 @@ h5 {
 }
 
 .filter-chip:hover,
-.filter-chip.active {
+.filter-chip.active,
+.scope-chip:hover,
+.scope-chip.active {
   color: #fffdf8;
   background: var(--ink);
   border-color: var(--ink);
@@ -569,6 +573,52 @@ tr:nth-child(even) td {
   border-top: 1px solid var(--line);
 }
 
+.metric-type {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 5px 8px;
+  color: #fffdf8;
+  background: var(--blue);
+  border-radius: 999px;
+  font: 700 11px var(--mono);
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.stat-card {
+  min-height: 132px;
+  padding: 14px;
+  background: #fffaf0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.stat-card span {
+  display: block;
+  min-height: 34px;
+  color: var(--muted);
+  font: 700 11px var(--mono);
+  overflow-wrap: anywhere;
+}
+
+.stat-card strong {
+  display: block;
+  margin: 8px 0;
+  font: 700 24px var(--display);
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
 .stacked-panel {
   margin-top: 14px;
 }
@@ -646,6 +696,22 @@ tr:nth-child(even) td {
   font: 700 19px var(--display);
 }
 
+.rk-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.rk-facts span {
+  padding: 7px 8px;
+  color: #2b251c;
+  background: #f1e2c4;
+  border: 1px solid #dcc796;
+  border-radius: 5px;
+  font: 700 12px var(--mono);
+}
+
 .mini-table {
   max-height: 360px;
   margin-top: 12px;
@@ -679,6 +745,7 @@ tr:nth-child(even) td {
   .model-grid,
   .kpi-grid,
   .metric-definition-grid,
+  .stat-grid,
   .lookup-grid,
   .rk-grid {
     grid-template-columns: 1fr;
@@ -695,7 +762,8 @@ tr:nth-child(even) td {
 
   .range-row,
   .permanence-row,
-  .metric-meta {
+  .metric-meta,
+  .rk-facts {
     grid-template-columns: 1fr;
   }
 }

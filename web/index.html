@@ -109,8 +109,13 @@
           <div id="statusBanner" class="status-banner">Ejecute una simulacion para ver resultados.</div>
           <div id="kpiGrid" class="kpi-grid"></div>
           <div class="panel">
-            <h4>Metricas, variables y puntos del enunciado</h4>
+            <h4>Metricas pedidas y metricas adicionales</h4>
             <div id="metricsTable" class="metric-definition-grid"></div>
+          </div>
+          <div class="panel stacked-panel">
+            <h4>Variables estadisticas calculadas en el vector</h4>
+            <p class="panel-intro">Son los acumuladores, contadores y maximos que quedan en la ultima fila y explican de donde salen las metricas.</p>
+            <div id="statisticsGrid" class="stat-grid"></div>
           </div>
         </section>
 
@@ -121,6 +126,10 @@
           </div>
           <div class="table-tools">
             <span>Separado por categorias: reloj, eventos, objetos permanentes, variables estadisticas y objetos temporales.</span>
+          </div>
+          <div class="row-scope-bar" aria-label="Seleccion de filas del vector">
+            <button class="scope-chip active" data-row-scope="requested">Filas j / i</button>
+            <button class="scope-chip" data-row-scope="last">Ultimas 10 filas</button>
           </div>
           <div class="vector-filter-bar" aria-label="Filtro de vector de estado">
             <button class="filter-chip active" data-vector-filter="ALL">Todo</button>
