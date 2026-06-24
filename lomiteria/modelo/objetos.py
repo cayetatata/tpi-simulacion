@@ -1,5 +1,7 @@
+"""Elementos permanentes, temporales y estructura del resultado."""
 from __future__ import annotations
 
+from collections import deque
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -9,6 +11,7 @@ INF = float("inf")
 
 @dataclass
 class SimulationParams:
+    """Todos los parametros editables de la simulacion y de la visualizacion."""
     x_minutes: float = 240.0
     max_iterations: int = 100000
     display_from: int = 1
@@ -52,6 +55,7 @@ class SimulationParams:
 
 @dataclass
 class Cliente:
+    """Objeto temporal: existe solo mientras el cliente sigue dentro del sistema."""
     id: int
     estado: str
     hora_llegada_negocio: float
@@ -60,7 +64,6 @@ class Cliente:
     hora_inicio_cola_salon: float | None = None
     tipo_consumo: str = ""
     salon_elegido: str = ""
-    preparador_asignado: int | None = None
     a_preparacion: int | None = None
     tiempo_preparacion: float | None = None
     hora_inicio_permanencia: float | None = None
@@ -69,6 +72,7 @@ class Cliente:
 
 @dataclass
 class Caja:
+    """Objeto permanente de la caja unica."""
     estado: str = "Libre"
     cliente_actual: int | None = None
     hora_inicio_ocupacion: float | None = None
@@ -77,6 +81,7 @@ class Caja:
 
 @dataclass
 class Preparador:
+    """Objeto permanente de cada preparador del mostrador."""
     id: int
     estado: str = "Libre"
     cliente_actual: int | None = None
@@ -87,10 +92,12 @@ class Preparador:
 
 @dataclass
 class Salon:
+    """Objeto permanente del salon con su cola y su agenda de salidas."""
     nombre: str
     capacidad: int
     ocupacion: int = 0
-    cola_entrada: list[int] = field(default_factory=list)
+    cola_entrada: deque[int] = field(default_factory=deque)
+    salidas_programadas: list[tuple[float, int]] = field(default_factory=list)
     ac_ocupacion_tiempo_persona: float = 0.0
     max_ocupacion: int = 0
     clientes_que_esperaron_por_capacidad: int = 0
@@ -98,6 +105,7 @@ class Salon:
 
 @dataclass
 class Estadisticas:
+    """Acumuladores y contadores que se actualizan durante la corrida."""
     ac_tiempo_permanencia_negocio: float = 0.0
     ct_clientes_finalizados: int = 0
     ac_tiempo_cola_caja: float = 0.0

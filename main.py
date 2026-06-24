@@ -1,4 +1,4 @@
-from lomiteria.web_server import run_web_app
+from lomiteria.interfaz.servidor_web import run_web_app
 
 
 if __name__ == "__main__":

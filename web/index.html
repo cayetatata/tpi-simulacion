@@ -87,6 +87,45 @@
               <h4>Supuesto clave</h4>
               <p>Si el salon elegido esta lleno, el cliente espera en la cola de ese mismo salon. No cambia de salon y no se retira.</p>
             </article>
+            <article class="model-card wide">
+              <h4>Como se calculan los randoms y los eventos</h4>
+              <ul class="compact-list">
+                <li>Llegadas: Box-Muller con memoria del segundo valor normal.</li>
+                <li>Caja, llevar y permanencia: uniforme continua.</li>
+                <li>Tipo de consumo, salon y A: tabla de probabilidades por RND.</li>
+                <li>Cada evento llama solo a la funcion que corresponde a ese momento del sistema.</li>
+              </ul>
+            </article>
+            <article class="model-card wide">
+              <h4>Como trabaja la memoria</h4>
+              <ul class="compact-list">
+                <li>No se guarda todo el vector.</li>
+                <li>Se conserva el estado actual del sistema.</li>
+                <li>Se guardan solo las filas pedidas por j e i.</li>
+                <li>Ademas se guardan solo las ultimas 10 filas, la ultima fila final y los controles.</li>
+              </ul>
+            </article>
+            <article class="model-card wide">
+              <h4>Donde se llama cada evento</h4>
+              <ul class="compact-list">
+                <li>`llegada_cliente` llama al archivo `eventos/llegada_cliente.py`.</li>
+                <li>`fin_atencion_caja` llama al archivo `eventos/fin_atencion_caja.py`.</li>
+                <li>`fin_preparacion_mostrador_i` llama al archivo `eventos/fin_preparacion_mostrador.py`.</li>
+                <li>`fin_permanencia_rojo` y `fin_permanencia_azul` llaman a sus archivos propios.</li>
+                <li>Los controles de 15 y 30 minutos llaman a `control_cola_mostrador_15min.py` y `control_salones_30min.py`.</li>
+              </ul>
+            </article>
+            <article class="model-card wide">
+              <h4>Que se mantiene en memoria</h4>
+              <ul class="compact-list">
+                <li>Objetos permanentes: caja, preparadores, salones y sus acumuladores.</li>
+                <li>Objetos temporales: solo clientes que siguen dentro del sistema.</li>
+                <li>Vector visible: solo las i filas pedidas desde j.</li>
+                <li>Vector reciente: solo las ultimas 10 filas.</li>
+                <li>Controles: listas de control de 15 y 30 minutos.</li>
+                <li>Box-Muller: solo un valor normal pendiente, si existe.</li>
+              </ul>
+            </article>
           </div>
         </section>
 
@@ -111,11 +150,6 @@
           <div class="panel">
             <h4>Metricas pedidas y metricas adicionales</h4>
             <div id="metricsTable" class="metric-definition-grid"></div>
-          </div>
-          <div class="panel stacked-panel">
-            <h4>Variables estadisticas calculadas en el vector</h4>
-            <p class="panel-intro">Son los acumuladores, contadores y maximos que quedan en la ultima fila y explican de donde salen las metricas.</p>
-            <div id="statisticsGrid" class="stat-grid"></div>
           </div>
         </section>
 

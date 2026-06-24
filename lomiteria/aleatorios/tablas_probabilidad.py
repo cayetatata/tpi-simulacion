@@ -1,8 +1,9 @@
+"""Tablas intermedias y reglas de decision por RND."""
 from __future__ import annotations
 
 from typing import Any
 
-from .models import SimulationParams
+from ..modelo.objetos import SimulationParams
 
 
 def buscar_tipo_consumo(rnd: float, parametros: SimulationParams) -> str:
@@ -29,6 +30,11 @@ def rango_permanencia(salon: str, reloj_min: float, parametros: SimulationParams
     return (parametros.rojo_14_min, parametros.rojo_14_max) if salon == "rojo" else (parametros.azul_14_min, parametros.azul_14_max)
 
 
+
+
+"""Las usamos para mostrarlas en la interfaces."""
+
+
 def tablas_intermedias(parametros: SimulationParams) -> dict[str, list[dict[str, Any]]]:
     amplitud_a = 1.0 / len(parametros.a_values)
     return {
@@ -51,11 +57,3 @@ def tablas_intermedias(parametros: SimulationParams) -> dict[str, list[dict[str,
             {"horario": "14 a 15", "reloj": "180 a 240", "rojo": f"U({parametros.rojo_14_min},{parametros.rojo_14_max})", "azul": f"U({parametros.azul_14_min},{parametros.azul_14_max})"},
         ],
     }
-
-
-# Alias conservados para tests/imports existentes.
-lookup_tipo_consumo = buscar_tipo_consumo
-lookup_salon = buscar_salon
-lookup_a_value = buscar_valor_a
-permanence_range = rango_permanencia
-intermediate_tables = tablas_intermedias

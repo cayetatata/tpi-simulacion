@@ -1,6 +1,7 @@
+"""Calculo RK4 del tiempo de preparacion para pedidos en local."""
 from __future__ import annotations
 
-from .models import SimulationParams
+from ..modelo.objetos import SimulationParams
 
 
 def construir_tablas_rk4(parametros: SimulationParams) -> tuple[dict[int, list[dict[str, float]]], dict[int, float]]:
@@ -32,7 +33,9 @@ def construir_tablas_rk4(parametros: SimulationParams) -> tuple[dict[int, list[d
                     "L(i+1)": round(proximo_l, 6),
                     "t(i+1)": round(proximo_t, 6),
                     "A": float(valor_a),
-                    "tiempo_min": round(proximo_t * parametros.rk_minutes_per_unit, 6),
+                    # El tiempo listo se lee en el t de la fila donde L(i+1)
+                    # supera el limite, igual que en el planteo de planilla.
+                    "tiempo_min": round(t * parametros.rk_minutes_per_unit, 6),
                 }
             )
             t = proximo_t
@@ -42,6 +45,3 @@ def construir_tablas_rk4(parametros: SimulationParams) -> tuple[dict[int, list[d
         tiempos_listos[valor_a] = filas[-1]["tiempo_min"]
 
     return tablas, tiempos_listos
-
-
-build_rk4_tables = construir_tablas_rk4

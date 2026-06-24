@@ -1,13 +1,17 @@
+"""Armado de cada fila del vector de estado."""
 from __future__ import annotations
 
+import heapq
 from typing import Any
 
-from .models import INF, StateRow
+from ..modelo.objetos import INF, StateRow
 
 
 COLUMNAS_EVENTOS = [
     "rnd_llegada_1",
     "rnd_llegada_2",
+    "formula_box_muller",
+    "origen_box_muller",
     "tiempo_entre_llegadas",
     "proxima_llegada",
     "rnd_caja",
@@ -117,22 +121,22 @@ def valores_objetos_temporales(estado: Any) -> dict[str, Any]:
         valores[f"{prefijo}_hora_inicio_cola_caja"] = blanco_o_redondeado(cliente.hora_inicio_cola_caja)
         valores[f"{prefijo}_hora_inicio_cola_mostrador"] = blanco_o_redondeado(cliente.hora_inicio_cola_mostrador)
         valores[f"{prefijo}_hora_inicio_cola_salon"] = blanco_o_redondeado(cliente.hora_inicio_cola_salon)
-        valores[f"{prefijo}_preparador_asignado"] = cliente.preparador_asignado or ""
         valores[f"{prefijo}_hora_inicio_permanencia"] = blanco_o_redondeado(cliente.hora_inicio_permanencia)
         valores[f"{prefijo}_fin_programado"] = blanco_o_redondeado(cliente.hora_fin_programada)
     return valores
 
 
 def proxima_salida_salon(estado: Any, nombre_salon: str) -> tuple[float, int | None]:
+    """Lee la proxima salida real del salon sin recorrer todos los clientes."""
     estado_buscado = "PSR" if nombre_salon == "rojo" else "PSA"
-    tiempos = [
-        (cliente.hora_fin_programada or INF, cliente.id)
-        for cliente in estado.clientes.values()
-        if cliente.estado == estado_buscado
-    ]
-    if not tiempos:
-        return INF, None
-    return min(tiempos, key=lambda item: item[0])
+    salon = estado.rojo if nombre_salon == "rojo" else estado.azul
+    while salon.salidas_programadas:
+        tiempo_salida, id_cliente = salon.salidas_programadas[0]
+        cliente = estado.clientes.get(id_cliente)
+        if cliente is not None and cliente.estado == estado_buscado and cliente.hora_fin_programada == tiempo_salida:
+            return tiempo_salida, id_cliente
+        heapq.heappop(salon.salidas_programadas)
+    return INF, None
 
 
 def hora_reloj(reloj_min: float) -> str:

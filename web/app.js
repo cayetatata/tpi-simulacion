@@ -41,74 +41,209 @@ const defaultParams = {
 
 const groups = [
   {
-    title: "Simulacion y vista",
+    title: "Alcance de la simulacion y filas a mostrar",
     fields: [
-      ["x_minutes", "Tiempo X (min)"],
-      ["max_iterations", "Max iteraciones"],
-      ["display_from", "Mostrar desde j"],
-      ["display_count", "Cantidad i"],
-      ["seed", "Semilla"]
+      ["x_minutes", "Tiempo final de simulacion X (min)"],
+      ["max_iterations", "Maximo de iteraciones del vector"],
+      ["display_from", "Fila inicial j a mostrar"],
+      ["display_count", "Cantidad de filas i a mostrar"],
+      ["seed", "Semilla opcional"]
     ]
   },
   {
-    title: "Llegada y caja",
+    title: "Llegadas de clientes y atencion en caja",
     fields: [
-      ["llegada_media", "Llegada media"],
-      ["llegada_desvio", "Llegada desvio"],
-      ["caja_min", "Caja min"],
-      ["caja_max", "Caja max"]
+      ["llegada_media", "Media entre llegadas (min)"],
+      ["llegada_desvio", "Desvio entre llegadas (min)"],
+      ["caja_min", "Tiempo minimo de atencion en caja (min)"],
+      ["caja_max", "Tiempo maximo de atencion en caja (min)"]
     ]
   },
   {
-    title: "Consumo y preparacion",
+    title: "Decisiones del cliente y preparacion del pedido",
     fields: [
-      ["prob_llevar", "Prob. llevar"],
-      ["prob_rojo", "Prob. rojo"],
-      ["preparadores", "Preparadores"],
-      ["llevar_min", "Llevar min"],
-      ["llevar_max", "Llevar max"],
-      ["a_values", "Valores A"],
-      ["rk_h", "h RK4"],
-      ["rk_limit_l", "Limite L"],
-      ["rk_minutes_per_unit", "Min por t RK"]
+      ["prob_llevar", "Probabilidad de compra para llevar"],
+      ["prob_rojo", "Probabilidad de elegir Salon Rojo"],
+      ["preparadores", "Cantidad de preparadores en mostrador"],
+      ["llevar_min", "Tiempo minimo para pedido para llevar (min)"],
+      ["llevar_max", "Tiempo maximo para pedido para llevar (min)"],
+      ["a_values", "Valores posibles de A para pedidos en local"],
+      ["rk_h", "Paso h de Runge-Kutta"],
+      ["rk_limit_l", "Valor de L para pedido listo"],
+      ["rk_minutes_per_unit", "Minutos reales por cada unidad t"]
     ]
   },
   {
-    title: "Capacidad y controles",
+    title: "Capacidad de salones y eventos de control",
     fields: [
-      ["capacidad_rojo", "Cap. rojo"],
-      ["capacidad_azul", "Cap. azul"],
-      ["control_mostrador_interval", "Control cola"],
-      ["control_salones_interval", "Control salones"]
+      ["capacidad_rojo", "Capacidad del Salon Rojo"],
+      ["capacidad_azul", "Capacidad del Salon Azul"],
+      ["control_mostrador_interval", "Cada cuantos minutos controlar cola de mostrador"],
+      ["control_salones_interval", "Cada cuantos minutos controlar ocupacion de salones"]
     ]
   },
   {
-    title: "Salon rojo permanencia",
+    title: "Tiempo de permanencia en Salon Rojo",
     fields: [
-      ["rojo_11_min", "11-12 min"],
-      ["rojo_11_max", "11-12 max"],
-      ["rojo_12_min", "12-13 min"],
-      ["rojo_12_max", "12-13 max"],
-      ["rojo_13_min", "13-14 min"],
-      ["rojo_13_max", "13-14 max"],
-      ["rojo_14_min", "14-15 min"],
-      ["rojo_14_max", "14-15 max"]
+      ["rojo_11_min", "Minimo entre 11 y 12 hs"],
+      ["rojo_11_max", "Maximo entre 11 y 12 hs"],
+      ["rojo_12_min", "Minimo entre 12 y 13 hs"],
+      ["rojo_12_max", "Maximo entre 12 y 13 hs"],
+      ["rojo_13_min", "Minimo entre 13 y 14 hs"],
+      ["rojo_13_max", "Maximo entre 13 y 14 hs"],
+      ["rojo_14_min", "Minimo entre 14 y 15 hs"],
+      ["rojo_14_max", "Maximo entre 14 y 15 hs"]
     ]
   },
   {
-    title: "Salon azul permanencia",
+    title: "Tiempo de permanencia en Salon Azul",
     fields: [
-      ["azul_11_min", "11-12 min"],
-      ["azul_11_max", "11-12 max"],
-      ["azul_12_min", "12-13 min"],
-      ["azul_12_max", "12-13 max"],
-      ["azul_13_min", "13-14 min"],
-      ["azul_13_max", "13-14 max"],
-      ["azul_14_min", "14-15 min"],
-      ["azul_14_max", "14-15 max"]
+      ["azul_11_min", "Minimo entre 11 y 12 hs"],
+      ["azul_11_max", "Maximo entre 11 y 12 hs"],
+      ["azul_12_min", "Minimo entre 12 y 13 hs"],
+      ["azul_12_max", "Maximo entre 12 y 13 hs"],
+      ["azul_13_min", "Minimo entre 13 y 14 hs"],
+      ["azul_13_max", "Maximo entre 13 y 14 hs"],
+      ["azul_14_min", "Minimo entre 14 y 15 hs"],
+      ["azul_14_max", "Maximo entre 14 y 15 hs"]
     ]
   }
 ];
+
+const vectorCategories = [
+  ["RELOJ_EVENTO", "Reloj / evento", "cat-reloj"],
+  ["EVENTOS", "Eventos", "cat-eventos"],
+  ["OBJETOS_PERMANENTES", "Objetos permanentes", "cat-permanentes"],
+  ["VARIABLES_ESTADISTICAS", "Variables estadisticas", "cat-estadisticas"],
+  ["OBJETOS_TEMPORALES", "Objetos temporales", "cat-temporales"]
+];
+
+const vectorGroupDefinitions = {
+  RELOJ_EVENTO: [
+    { title: "Fila simulada", columns: ["nro_evento", "evento", "reloj_min", "hora_real"] }
+  ],
+  EVENTOS: [
+    { title: "Llegada clientes", columns: ["rnd_llegada_1", "rnd_llegada_2", "formula_box_muller", "origen_box_muller", "tiempo_entre_llegadas", "proxima_llegada"] },
+    { title: "Caja", columns: ["rnd_caja", "tiempo_caja", "fin_caja"] },
+    { title: "Tipo de consumo", columns: ["rnd_tipo_consumo", "tipo_consumo"] },
+    { title: "Salon elegido", columns: ["rnd_salon", "salon"] },
+    { title: "Preparacion local RK4", columns: ["rnd_a_preparacion", "a_preparacion", "tiempo_preparacion_local"] },
+    { title: "Preparacion para llevar", columns: ["rnd_preparacion_llevar", "tiempo_preparacion_llevar"] },
+    { title: "Fin mostrador", columns: ["fin_preparacion_1", "fin_preparacion_2", "fin_preparacion_3"] },
+    { title: "Permanencia salon", columns: ["rnd_permanencia_salon", "tiempo_permanencia_salon", "fin_permanencia_rojo", "fin_permanencia_azul"] },
+    { title: "Controles", columns: ["proximo_control_15", "proximo_control_30"] }
+  ],
+  OBJETOS_PERMANENTES: [
+    { title: "Caja", columns: ["estado_caja", "cliente_caja", "cola_caja"] },
+    { title: "Cola mostrador", columns: ["cola_mostrador"] },
+    { title: "Preparador 1", columns: ["estado_preparador_1", "cliente_preparador_1"] },
+    { title: "Preparador 2", columns: ["estado_preparador_2", "cliente_preparador_2"] },
+    { title: "Preparador 3", columns: ["estado_preparador_3", "cliente_preparador_3"] },
+    { title: "Salon rojo", columns: ["ocupacion_rojo", "cola_rojo"] },
+    { title: "Salon azul", columns: ["ocupacion_azul", "cola_azul"] }
+  ],
+  VARIABLES_ESTADISTICAS: [
+    { title: "Permanencia negocio", columns: ["ac_tiempo_permanencia_negocio", "ct_clientes_finalizados"] },
+    { title: "Cola caja", columns: ["ac_tiempo_cola_caja", "ct_clientes_pasan_por_caja", "max_cola_caja"] },
+    { title: "Cola mostrador", columns: ["ac_tiempo_cola_mostrador", "ct_clientes_pasan_por_mostrador", "max_cola_mostrador"] },
+    { title: "Ocupacion recursos", columns: ["ac_ocupacion_caja", "ac_ocupacion_preparador_1", "ac_ocupacion_preparador_2", "ac_ocupacion_preparador_3"] },
+    { title: "Salon rojo estadisticas", columns: ["ac_ocupacion_rojo_tiempo_persona", "max_ocupacion_rojo", "ct_esperaron_rojo_lleno"] },
+    { title: "Salon azul estadisticas", columns: ["ac_ocupacion_azul_tiempo_persona", "max_ocupacion_azul", "ct_esperaron_azul_lleno"] }
+  ]
+};
+
+const scheduledEventColumns = [
+  "proxima_llegada",
+  "fin_caja",
+  "fin_preparacion_1",
+  "fin_preparacion_2",
+  "fin_preparacion_3",
+  "fin_permanencia_rojo",
+  "fin_permanencia_azul",
+  "proximo_control_15",
+  "proximo_control_30"
+];
+
+const metricDefinitions = [
+  {
+    metrica: "tiempo_promedio_permanencia_negocio",
+    orden: 1,
+    titulo: "Tiempo promedio de permanencia en el negocio",
+    tipo: "Pedida por el enunciado",
+    formula: "ac_tiempo_permanencia_negocio / ct_clientes_finalizados",
+    variables: ["ac_tiempo_permanencia_negocio", "ct_clientes_finalizados"],
+    enunciado: "Tiempo de permanencia en el negocio."
+  },
+  {
+    metrica: "tiempo_promedio_cola_caja",
+    orden: 2,
+    titulo: "Tiempo promedio en cola de caja",
+    tipo: "Pedida por el enunciado",
+    formula: "ac_tiempo_cola_caja / ct_clientes_pasan_por_caja",
+    variables: ["ac_tiempo_cola_caja", "ct_clientes_pasan_por_caja"],
+    enunciado: "Tiempo en cola en la caja."
+  },
+  {
+    metrica: "control_15_cola_mostrador",
+    orden: 3,
+    titulo: "Control cada 15 minutos de la cola del mostrador",
+    tipo: "Pedida por el enunciado",
+    formula: "Lectura directa de la cantidad de clientes en cola al dispararse cada control de 15 minutos",
+    variables: ["cantidad_controles_15", "primer_control_cola_mostrador", "ultimo_control_cola_mostrador"],
+    enunciado: "Cada 15 minutos, cantidad de gente en cola frente al mostrador."
+  },
+  {
+    metrica: "control_30_ocupacion_salones",
+    orden: 4,
+    titulo: "Control cada 30 minutos de ocupacion de salones",
+    tipo: "Pedida por el enunciado",
+    formula: "Lectura directa de ocupacion del Salon Rojo y del Salon Azul al dispararse cada control de 30 minutos",
+    variables: ["cantidad_controles_30", "ultima_ocupacion_rojo", "ultima_ocupacion_azul"],
+    enunciado: "Cada 30 minutos, cantidad de personas en Salon Rojo y Salon Azul."
+  },
+  {
+    metrica: "tiempo_promedio_cola_mostrador",
+    orden: 1,
+    titulo: "Tiempo promedio en cola frente al mostrador",
+    tipo: "Metrica adicional",
+    formula: "ac_tiempo_cola_mostrador / ct_clientes_pasan_por_mostrador",
+    variables: ["ac_tiempo_cola_mostrador", "ct_clientes_pasan_por_mostrador"],
+    enunciado: "Demora promedio antes de que un pedido empiece a prepararse."
+  },
+  {
+    metrica: "porcentaje_ocupacion_caja",
+    orden: 2,
+    titulo: "Porcentaje de ocupacion de la caja",
+    tipo: "Metrica adicional",
+    formula: "ac_ocupacion_caja / reloj_min * 100",
+    variables: ["ac_ocupacion_caja", "reloj_min"],
+    enunciado: "Utilizacion de la caja durante toda la simulacion."
+  },
+  {
+    metrica: "porcentaje_ocupacion_preparadores",
+    orden: 3,
+    titulo: "Porcentaje de ocupacion de los preparadores",
+    tipo: "Metrica adicional",
+    formula: "sum(ac_ocupacion_preparador_i) / (preparadores * reloj_min) * 100",
+    variables: ["ac_ocupacion_preparador_i", "preparadores", "reloj_min"],
+    enunciado: "Utilizacion conjunta del mostrador de preparacion."
+  },
+  {
+    metrica: "clientes_esperaron_salon_lleno_total",
+    orden: 4,
+    titulo: "Clientes que esperaron por salon lleno",
+    tipo: "Metrica adicional",
+    formula: "ct_esperaron_rojo_lleno + ct_esperaron_azul_lleno",
+    variables: ["ct_esperaron_rojo_lleno", "ct_esperaron_azul_lleno"],
+    enunciado: "Cantidad total de clientes que no pudieron entrar de inmediato al salon elegido."
+  }
+];
+
+const rk4Texts = {
+  ecuacion: "dL/dt = 3A + 6",
+  reglaInicial: "L inicial = A",
+  minutosPorT: "t = 1 equivale a"
+};
 
 let latestPayload = null;
 let activeVectorFilter = "ALL";
@@ -234,7 +369,6 @@ function activateView(name) {
 function renderPayload(payload) {
   renderKpis(payload);
   renderMetrics(payload);
-  renderStatisticCards(payload);
   renderVectorTable(currentVectorRows());
   renderTable("finalTable", [payload.final_flat || {}]);
   renderTable("controls15Table", payload.controls_15 || []);
@@ -274,39 +408,166 @@ function renderVectorTable(rows) {
     host.innerHTML = emptyTable();
     return;
   }
-  const categories = [
-    ["RELOJ_EVENTO", "Reloj / Evento", "cat-reloj"],
-    ["EVENTOS", "Eventos", "cat-eventos"],
-    ["OBJETOS_PERMANENTES", "Permanentes", "cat-permanentes"],
-    ["VARIABLES_ESTADISTICAS", "Estadisticas", "cat-estadisticas"],
-    ["OBJETOS_TEMPORALES", "Temporales", "cat-temporales"]
-  ];
-  const columns = [];
-  categories.forEach(([key, title, className]) => {
-    if (activeVectorFilter !== "ALL" && activeVectorFilter !== key) return;
-    const names = unique(rows.flatMap((row) => Object.keys(row[key] || {})));
-    names.forEach((name) => columns.push({ key, name, title, className }));
-  });
+  const columns = buildVectorColumns(rows);
   if (!columns.length) {
     host.innerHTML = emptyMessage("La categoria seleccionada no tiene columnas para las filas mostradas.");
     return;
   }
+  const categoryGroups = adjacentGroups(columns, "title");
+  const conceptGroups = adjacentGroups(columns, "groupTitle");
   host.innerHTML = `
-    <table>
+    <table class="vector-table">
       <thead>
-        <tr>${columns.map((column) => `<th class="${column.className}">${column.title}<br>${column.name}</th>`).join("")}</tr>
+        <tr class="vector-category-row">
+          ${categoryGroups.map((group) => `<th class="${group.className}" colspan="${group.colspan}">${group.label}</th>`).join("")}
+        </tr>
+        <tr class="vector-concept-row">
+          ${conceptGroups.map((group) => `<th class="${group.className}" colspan="${group.colspan}">${group.label}</th>`).join("")}
+        </tr>
+        <tr class="vector-column-row">
+          ${columns.map((column) => `<th class="${column.className}">${column.name}</th>`).join("")}
+        </tr>
       </thead>
       <tbody>
-        ${rows.map((row) => `<tr>${columns.map((column) => `<td>${formatCell(row[column.key]?.[column.name])}</td>`).join("")}</tr>`).join("")}
+        ${rows.map((row) => renderVectorRow(row, columns)).join("")}
       </tbody>
     </table>
   `;
 }
 
+function buildVectorColumns(rows) {
+  const columns = [];
+  vectorCategories.forEach(([key, title, className]) => {
+    if (activeVectorFilter !== "ALL" && activeVectorFilter !== key) return;
+    const names = unique(rows.flatMap((row) => Object.keys(row[key] || {})));
+    orderedVectorNames(key, names).forEach((name) => {
+      columns.push({
+        key,
+        name,
+        title,
+        className,
+        groupTitle: vectorGroupTitle(key, name)
+      });
+    });
+  });
+  return columns;
+}
+
+function orderedVectorNames(category, names) {
+  if (category === "OBJETOS_TEMPORALES") {
+    return [...names].sort(compareTemporaryObjectColumns);
+  }
+  const definitions = vectorGroupDefinitions[category] || [];
+  const ordered = [];
+  const nameSet = new Set(names);
+  definitions.forEach((group) => {
+    group.columns.forEach((column) => {
+      if (nameSet.has(column)) ordered.push(column);
+    });
+  });
+  names.forEach((name) => {
+    if (!ordered.includes(name)) ordered.push(name);
+  });
+  return ordered;
+}
+
+function vectorGroupTitle(category, name) {
+  if (category === "OBJETOS_TEMPORALES") {
+    const match = name.match(/^cliente_([0-9]+)_/);
+    return match ? `Cliente ${match[1]}` : "Clientes activos";
+  }
+  if (category === "EVENTOS" && name.match(/^fin_preparacion_[0-9]+$/)) return "Fin mostrador";
+  if (category === "OBJETOS_PERMANENTES" && name.match(/^(estado|cliente)_preparador_[0-9]+$/)) {
+    const id = name.match(/_preparador_([0-9]+)$/)[1];
+    return `Preparador ${id}`;
+  }
+  if (category === "VARIABLES_ESTADISTICAS" && name.match(/^ac_ocupacion_preparador_[0-9]+$/)) return "Ocupacion recursos";
+  if (category === "VARIABLES_ESTADISTICAS" && ["ac_ocupacion_rojo_tiempo_persona", "max_ocupacion_rojo", "ct_esperaron_rojo_lleno"].includes(name)) return "Salon rojo estadisticas";
+  if (category === "VARIABLES_ESTADISTICAS" && ["ac_ocupacion_azul_tiempo_persona", "max_ocupacion_azul", "ct_esperaron_azul_lleno"].includes(name)) return "Salon azul estadisticas";
+  const definitions = vectorGroupDefinitions[category] || [];
+  const found = definitions.find((group) => group.columns.includes(name));
+  return found ? found.title : "Otros";
+}
+
+function compareTemporaryObjectColumns(left, right) {
+  const leftParts = temporaryObjectParts(left);
+  const rightParts = temporaryObjectParts(right);
+  if (leftParts.clientId !== rightParts.clientId) return leftParts.clientId - rightParts.clientId;
+  return leftParts.attributeIndex - rightParts.attributeIndex;
+}
+
+function temporaryObjectParts(name) {
+  const order = [
+    "estado",
+    "hora_llegada",
+    "tipo_consumo",
+    "salon",
+    "hora_inicio_cola_caja",
+    "hora_inicio_cola_mostrador",
+    "hora_inicio_cola_salon",
+    "hora_inicio_permanencia",
+    "fin_programado"
+  ];
+  const match = name.match(/^cliente_([0-9]+)_(.*)$/);
+  if (!match) return { clientId: 999999, attributeIndex: 999999 };
+  const attributeIndex = order.indexOf(match[2]);
+  return {
+    clientId: Number(match[1]),
+    attributeIndex: attributeIndex === -1 ? 999999 : attributeIndex
+  };
+}
+
+function adjacentGroups(columns, field) {
+  const groups = [];
+  columns.forEach((column) => {
+    const last = groups[groups.length - 1];
+    const label = column[field];
+    if (last && last.label === label && last.className === column.className) {
+      last.colspan += 1;
+    } else {
+      groups.push({ label, className: column.className, colspan: 1 });
+    }
+  });
+  return groups;
+}
+
+function renderVectorRow(row, columns) {
+  const nextEventColumns = nextEventMinimumColumns(row);
+  const cells = columns.map((column) => {
+    const isNextEvent = column.key === "EVENTOS" && nextEventColumns.has(column.name);
+    const cellClass = isNextEvent ? "next-event-cell" : "";
+    return `<td class="${cellClass}">${formatCell(row[column.key]?.[column.name])}</td>`;
+  });
+  return `<tr>${cells.join("")}</tr>`;
+}
+
+function nextEventMinimumColumns(row) {
+  const eventValues = row.EVENTOS || {};
+  const currentClock = Number(row.RELOJ_EVENTO?.reloj_min ?? 0);
+  let minimum = Infinity;
+  const columns = [];
+  Object.keys(eventValues).filter(isScheduledEventColumn).forEach((column) => {
+    const value = Number(eventValues[column]);
+    if (!Number.isFinite(value) || value < currentClock - 0.0001) return;
+    if (value < minimum - 0.0001) {
+      minimum = value;
+      columns.length = 0;
+      columns.push(column);
+      return;
+    }
+    if (Math.abs(value - minimum) <= 0.0001) columns.push(column);
+  });
+  return new Set(columns);
+}
+
+function isScheduledEventColumn(column) {
+  return scheduledEventColumns.includes(column) || column.match(/^fin_preparacion_[0-9]+$/);
+}
+
 function renderMetrics(payload) {
   const host = document.getElementById("metricsTable");
   const metrics = payload.metrics || {};
-  const definitions = payload.metric_definitions || [];
+  const definitions = metricDefinitions;
   if (!definitions.length) {
     host.innerHTML = emptyMessage("No hay definiciones de metricas.");
     return;
@@ -314,50 +575,98 @@ function renderMetrics(payload) {
   host.innerHTML = definitions.map((definition) => {
     const value = metrics[definition.metrica];
     return `
-      <article class="metric-card">
-        <div class="metric-card-top">
+      <details class="metric-card">
+        <summary class="metric-card-top">
           <div>
-            <p class="metric-key">${definition.metrica}</p>
+            <p class="metric-key">${metricHeader(definition)}</p>
             <h5>${definition.titulo}</h5>
           </div>
-          <strong class="metric-value">${formatMetricValue(value)}</strong>
+          <strong class="metric-value">${metricDisplayValue(definition, value, payload)}</strong>
+        </summary>
+        <div class="metric-detail">
+          <div class="metric-type">${definition.tipo || "Metrica"}</div>
+          <div class="metric-meta">
+            <span>Formula</span>
+            <code>${definition.formula}</code>
+          </div>
+          <div class="metric-detail-values">
+            ${metricCalculationRows(definition, payload).map((item) => `
+              <div>
+                <span>${item.label}</span>
+                <strong>${formatCell(item.value)}</strong>
+              </div>
+            `).join("")}
+          </div>
+          <p class="metric-enunciado">${definition.enunciado}</p>
         </div>
-        <div class="metric-type">${definition.tipo || "Metrica"}</div>
-        <div class="metric-meta">
-          <span>Formula</span>
-          <code>${definition.formula}</code>
-        </div>
-        <div class="metric-meta">
-          <span>Variables</span>
-          <code>${(definition.variables || []).join(", ")}</code>
-        </div>
-        <p class="metric-enunciado">${definition.enunciado}</p>
-      </article>
+      </details>
     `;
   }).join("");
 }
 
-function renderStatisticCards(payload) {
-  const host = document.getElementById("statisticsGrid");
-  const stats = payload.final_row?.VARIABLES_ESTADISTICAS || {};
-  const definitions = payload.statistic_definitions || [];
-  const descriptions = Object.fromEntries(definitions.map((item) => [item.variable, item.descripcion]));
-  const entries = Object.entries(stats);
-  if (!entries.length) {
-    host.innerHTML = emptyMessage("No hay variables estadisticas para mostrar.");
-    return;
+function metricHeader(definition) {
+  const order = definition.orden || "";
+  return order ? `${order}. ${definition.tipo}` : definition.tipo || "Metrica";
+}
+
+function metricDisplayValue(definition, value, payload) {
+  if (definition.metrica === "control_15_cola_mostrador") return `${payload.controls_15?.length || 0} lecturas`;
+  if (definition.metrica === "control_30_ocupacion_salones") return `${payload.controls_30?.length || 0} lecturas`;
+  return formatMetricValue(value);
+}
+
+function metricCalculationRows(definition, payload) {
+  if (definition.metrica === "control_15_cola_mostrador") {
+    return [
+      { label: "cantidad_controles_15", value: payload.controls_15?.length || 0 },
+      { label: "primer_control_cola_mostrador", value: payload.controls_15?.[0]?.cola_mostrador ?? "" },
+      { label: "ultimo_control_cola_mostrador", value: lastItem(payload.controls_15)?.cola_mostrador ?? "" }
+    ];
   }
-  host.innerHTML = entries.map(([name, value]) => {
-    const baseName = name.replace(/_[0-9]+$/, "_i");
-    const description = descriptions[name] || descriptions[baseName] || "Variable estadistica usada para lectura del vector y calculo de resultados.";
-    return `
-      <article class="stat-card">
-        <span>${name}</span>
-        <strong>${formatCell(value)}</strong>
-        <p>${description}</p>
-      </article>
-    `;
-  }).join("");
+  if (definition.metrica === "control_30_ocupacion_salones") {
+    const last = lastItem(payload.controls_30) || {};
+    return [
+      { label: "cantidad_controles_30", value: payload.controls_30?.length || 0 },
+      { label: "ultima_ocupacion_rojo", value: last.ocupacion_rojo ?? "" },
+      { label: "ultima_ocupacion_azul", value: last.ocupacion_azul ?? "" }
+    ];
+  }
+  if (definition.metrica === "porcentaje_ocupacion_preparadores") {
+    const finalValues = payload.final_flat || {};
+    const prepValues = Object.entries(finalValues)
+      .filter(([key]) => key.match(/^ac_ocupacion_preparador_[0-9]+$/))
+      .map(([key, value]) => ({ label: key, value }));
+    const total = prepValues.reduce((sum, item) => sum + Number(item.value || 0), 0);
+    return [
+      ...prepValues,
+      { label: "sum_ac_ocupacion_preparadores", value: total },
+      { label: "preparadores", value: prepValues.length },
+      { label: "reloj_min", value: finalValues.reloj_min }
+    ];
+  }
+  return (definition.variables || []).map((variable) => ({
+    label: variable,
+    value: metricVariableValue(variable, payload)
+  }));
+}
+
+function metricVariableValue(variable, payload) {
+  const finalValues = payload.final_flat || {};
+  if (variable === "reloj_min") return payload.summary?.final_clock ?? finalValues.reloj_min;
+  if (variable === "preparadores") {
+    return Object.keys(finalValues).filter((key) => key.match(/^ac_ocupacion_preparador_[0-9]+$/)).length;
+  }
+  if (variable === "ac_ocupacion_preparador_i") {
+    return Object.entries(finalValues)
+      .filter(([key]) => key.match(/^ac_ocupacion_preparador_[0-9]+$/))
+      .map(([key, value]) => `${key}=${formatCell(value)}`)
+      .join(" | ");
+  }
+  return finalValues[variable] ?? payload.metrics?.[variable] ?? "";
+}
+
+function lastItem(items) {
+  return items && items.length ? items[items.length - 1] : null;
 }
 
 function renderLookupTables(tables) {
@@ -416,7 +725,7 @@ function renderRkTables(tables) {
       <article class="rk-card">
         <div class="rk-card-head">
           <div>
-            <p class="metric-key">${params.ecuacion || "dL/dt = 3A + 6"}</p>
+            <p class="metric-key">${rk4Texts.ecuacion}</p>
             <h5>A = ${aValue}</h5>
           </div>
           <div class="rk-summary">
@@ -426,9 +735,9 @@ function renderRkTables(tables) {
         </div>
         <div class="rk-facts">
           <span>h = ${formatCell(params.h)}</span>
-          <span>L inicial = ${aValue}</span>
+          <span>${rk4Texts.reglaInicial.replace("A", aValue)}</span>
           <span>Listo cuando L > ${formatCell(params.limite_l)}</span>
-          <span>t = 1 equivale a ${formatCell(params.minutos_por_t)} min</span>
+          <span>${rk4Texts.minutosPorT} ${formatCell(params.minutos_por_t)} min</span>
         </div>
         <div class="table-host mini-table">
           ${tableHtml(sampleRkRows(rows))}

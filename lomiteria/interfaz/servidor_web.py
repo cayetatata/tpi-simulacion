@@ -1,3 +1,4 @@
+"""Servidor local y API JSON de la aplicacion web."""
 from __future__ import annotations
 
 import json
@@ -7,14 +8,11 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
 
-from .distributions import NOTAS_ORIGEN_RND
-from .metrics import definiciones_metricas
-from .models import SimulationParams, SimulationResult
-from .object_definitions import DEFINICIONES_ESTADOS_CLIENTE, DEFINICIONES_OBJETOS, DEFINICIONES_VARIABLES_ESTADISTICAS
-from .simulator import simulate
+from ..modelo.objetos import SimulationParams, SimulationResult
+from ..simulacion.motor import simulate
 
 
-WEB_DIR = Path(__file__).resolve().parent.parent / "web"
+WEB_DIR = Path(__file__).resolve().parent.parent.parent / "web"
 
 
 def result_to_payload(result: SimulationResult) -> dict[str, Any]:
@@ -32,8 +30,6 @@ def result_to_payload(result: SimulationResult) -> dict[str, Any]:
             "h": result.params.rk_h,
             "limite_l": result.params.rk_limit_l,
             "minutos_por_t": result.params.rk_minutes_per_unit,
-            "regla_l_inicial": "L inicial = A",
-            "ecuacion": "dL/dt = 3A + 6",
         },
         "vector_rows": [row.as_grouped_dict() for row in result.rows],
         "last_rows": [row.as_grouped_dict() for row in result.last_rows],
@@ -41,11 +37,6 @@ def result_to_payload(result: SimulationResult) -> dict[str, Any]:
         "final_row": result.final_row.as_grouped_dict(),
         "final_flat": result.final_row.flat_dict(),
         "metrics": result.metrics,
-        "metric_definitions": definiciones_metricas(),
-        "statistic_definitions": DEFINICIONES_VARIABLES_ESTADISTICAS,
-        "object_definitions": DEFINICIONES_OBJETOS,
-        "state_definitions": DEFINICIONES_ESTADOS_CLIENTE,
-        "random_source_notes": NOTAS_ORIGEN_RND,
         "controls_15": result.controls_15,
         "controls_30": result.controls_30,
         "rk4_tables": result.rk4_tables,

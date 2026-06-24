@@ -200,7 +200,6 @@ Atributos:
 - `hora_inicio_cola_salon`
 - `tipo_consumo`: `llevar` o `local`
 - `salon_elegido`: `rojo`, `azul` o vacio
-- `preparador_asignado`
 - `a_preparacion`
 - `tiempo_preparacion`
 - `hora_inicio_permanencia`
@@ -454,7 +453,6 @@ Para cada cliente activo:
 - `cliente_n_hora_inicio_cola_caja`
 - `cliente_n_hora_inicio_cola_mostrador`
 - `cliente_n_hora_inicio_cola_salon`
-- `cliente_n_preparador_asignado`
 - `cliente_n_hora_inicio_permanencia`
 - `cliente_n_fin_programado`
 
